@@ -1,6 +1,6 @@
 {
   "name": "lazyboyjs",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Wrapper to access and manipulate CouchDB server easily",
   "main": "./dist/lazyboyjs.js",
   "scripts": {
@@ -24,6 +24,10 @@
     "typings/index.d.ts",
     "makefile"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://pteyssedre@bitbucket.org/pteyssedre/lazyboyjs.git"
+  },
   "author": {
     "name": "pteyssedre",
     "email": "pierre@teyssedre.ca"

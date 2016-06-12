@@ -34,6 +34,9 @@ export declare module lazyboyjs {
         Not_Connected = 16,
         Error = 32,
     }
+    interface DbInitializeAllCallback {
+        (error: any, result: ReportInitialization): void;
+    }
     interface DbCreationCallback {
         (error: any, result: DbCreateStatus): void;
     }
@@ -44,6 +47,14 @@ export declare module lazyboyjs {
         name: string;
         message: string;
         constructor(message?: string);
+    }
+    interface ReportInitialization {
+        success: Array<CreateReportEntry>;
+        fail: Array<CreateReportEntry>;
+    }
+    class CreateReportEntry {
+        name: string;
+        status: DbCreateStatus;
     }
     class LazyConst {
         static DesignViews: string;
@@ -75,7 +86,7 @@ export declare module lazyboyjs {
          * TODO: Create report Interface to export result of creation.
          * @param callback
          */
-        InitializeAllDatabases(callback: DbCreationCallback): void;
+        InitializeAllDatabases(callback: DbInitializeAllCallback): void;
         /**
          * @param name {string}
          * @param callback {function}

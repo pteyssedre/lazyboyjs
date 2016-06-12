@@ -39,6 +39,10 @@ export module lazyboyjs {
         Error = 1 << 5
     }
 
+    export interface DbInitializeAllCallback {
+        (error: any, result: ReportInitialization): void;
+    }
+
     export interface DbCreationCallback {
         (error: any, result: DbCreateStatus): void;
     }
@@ -55,6 +59,16 @@ export module lazyboyjs {
             this.name = "ReportError";
             this.message = message;
         }
+    }
+
+    export interface ReportInitialization {
+        success: Array<CreateReportEntry>;
+        fail: Array<CreateReportEntry>;
+    }
+
+    export class CreateReportEntry {
+        public name: string;
+        public status: DbCreateStatus;
     }
 
     export class LazyConst {
@@ -74,9 +88,9 @@ export module lazyboyjs {
         private _options: Cradle.Options;
         private _dbNames: string[] = [];
         private _dbs: { [id: string]: Cradle.Database } = {};
-        private _cOaC: (error: any, result: any)=>void = function () {
+        private _cOaC: (error: any, result: ReportInitialization)=>void = function () {
         };
-        private _report: {success: Array<string>, fail: Array<string>} = {
+        private _report: ReportInitialization = {
             success: [],
             fail: []
         };
@@ -112,7 +126,7 @@ export module lazyboyjs {
          * TODO: Create report Interface to export result of creation.
          * @param callback
          */
-        InitializeAllDatabases(callback: DbCreationCallback): void {
+        InitializeAllDatabases(callback: DbInitializeAllCallback): void {
             this._cOaC = callback;
             let n = this._dbNames.splice(0, 1);
             this.InitializeDatabase(n[0], this._continueCreate);
@@ -270,8 +284,7 @@ export module lazyboyjs {
                             } else {
                                 return callback(error, DbCreateStatus.Error);
                             }
-                        }
-                        if (document) {
+                        } else if (document) {
                             console.log("new document", document);
                         } else {
                             return callback(null, DbCreateStatus.Created_Without_Views);
@@ -279,8 +292,9 @@ export module lazyboyjs {
 
                     });
                 }
+            } else {
+                return callback(null, DbCreateStatus.Created_Without_Views);
             }
-            return callback(null, DbCreateStatus.Created_Without_Views);
         };
         /**
          * Shorter to save and validate the {views} of a specific database.

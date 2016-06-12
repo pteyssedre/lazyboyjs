@@ -20,6 +20,12 @@ var lazyboyjs;
         return ReportError;
     }());
     lazyboyjs.ReportError = ReportError;
+    var CreateReportEntry = (function () {
+        function CreateReportEntry() {
+        }
+        return CreateReportEntry;
+    }());
+    lazyboyjs.CreateReportEntry = CreateReportEntry;
     var LazyConst = (function () {
         function LazyConst() {
         }
@@ -112,7 +118,7 @@ var lazyboyjs;
                                     return callback(error, DbCreateStatus.Error);
                                 }
                             }
-                            if (document) {
+                            else if (document) {
                                 console.log("new document", document);
                             }
                             else {
@@ -121,7 +127,9 @@ var lazyboyjs;
                         });
                     }
                 }
-                return callback(null, DbCreateStatus.Created_Without_Views);
+                else {
+                    return callback(null, DbCreateStatus.Created_Without_Views);
+                }
             };
             /**
              * Shorter to save and validate the {views} of a specific database.
