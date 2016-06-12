@@ -71,12 +71,33 @@ describe('LazyBoy', function () {
                     "lazy_dbviews": LazyDesignViews
                 }
             };
-            var LazyBoy = new lazyboyjs.LazyBoy(LazyOptions).Databases(['dbviews']);
+            var LazyBoy = new lazyboyjs.LazyBoy(LazyOptions).Databases('dbviews');
             LazyBoy.InitializeAllDatabases(function (error, report) {
                 console.log(report);
                 expect(error).to.equal(null);
                 expect(report.success[0].name).to.equal("lazy_dbviews");
                 expect(report.success[0].status).to.equal(lazyboyjs.DbCreateStatus.Created);
+                done();
+            });
+        });
+    });
+    describe('Drop one database', function () {
+        it("Should drop the database named 'lazy_test'", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('test').Connect().DropDatabase('test', function (error, status) {
+                expect(error).to.equal(null);
+                expect(status).to.equal(lazyboyjs.DbDropStatus.Dropped);
+                done();
+            });
+        });
+    });
+    describe('Drop multiple databases', function () {
+        it("Should drop all the databases of this test", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('dbviews', 'test_multiple1', 'test_multiple2', 'test_multiple3').Connect();
+            l.DropDatabases(function (error, report) {
+                expect(error).to.equal(null);
+                expect(report.dropped.length).to.equal(4);
                 done();
             });
         });

@@ -12,6 +12,19 @@ var lazyboyjs;
         DbCreateStatus[DbCreateStatus["Error"] = 32] = "Error";
     })(lazyboyjs.DbCreateStatus || (lazyboyjs.DbCreateStatus = {}));
     var DbCreateStatus = lazyboyjs.DbCreateStatus;
+    (function (DbDropStatus) {
+        DbDropStatus[DbDropStatus["Dropped"] = 3] = "Dropped";
+        DbDropStatus[DbDropStatus["Conflict"] = 6] = "Conflict";
+        DbDropStatus[DbDropStatus["Error"] = 12] = "Error";
+    })(lazyboyjs.DbDropStatus || (lazyboyjs.DbDropStatus = {}));
+    var DbDropStatus = lazyboyjs.DbDropStatus;
+    (function (InstanceCreateStatus) {
+        InstanceCreateStatus[InstanceCreateStatus["Created"] = 5] = "Created";
+        InstanceCreateStatus[InstanceCreateStatus["Conflict"] = 10] = "Conflict";
+        InstanceCreateStatus[InstanceCreateStatus["Updated"] = 20] = "Updated";
+        InstanceCreateStatus[InstanceCreateStatus["Error"] = 40] = "Error";
+    })(lazyboyjs.InstanceCreateStatus || (lazyboyjs.InstanceCreateStatus = {}));
+    var InstanceCreateStatus = lazyboyjs.InstanceCreateStatus;
     var ReportError = (function () {
         function ReportError(message) {
             this.name = "ReportError";
@@ -235,6 +248,7 @@ var lazyboyjs;
                 var name = _a[_i];
                 this._dbs[name] = this._connection.database(name);
             }
+            return this;
         };
         /**
          *
@@ -301,10 +315,10 @@ var lazyboyjs;
             });
         };
         /**
-         *
-         * @param dbName
-         * @param instance
-         * @param callback
+         * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
+         * @param dbName {string}
+         * @param instance {lazyboyjs.LazyInstance}
+         * @param callback {lazyboyjs.InstanceCreateCallback}
          */
         LazyBoy.prototype.AddInstance = function (dbName, instance, callback) {
             var id = this._newGUID();
@@ -329,7 +343,14 @@ var lazyboyjs;
             }
         };
         ;
-        LazyBoy.prototype.GetViewResult = function (dbName, viewName, key, value, callback) {
+        /**
+         * Shorter to access the result of a view calculation.
+         * @param dbName {string} database name where the request should be executed.
+         * @param viewName {string} view name initialize the request.
+         * @param key {object} actual value to search inside the view.
+         * @param callback {}
+         */
+        LazyBoy.prototype.GetViewResult = function (dbName, viewName, key, callback) {
             var db = this._getDb(dbName);
             if (db) {
                 db.view("views/" + viewName, { key: key }, function (error, result) {
@@ -344,6 +365,38 @@ var lazyboyjs;
                 return callback(new ReportError("database doesn't exist or not managed"), null);
             }
         };
+        ;
+        LazyBoy.prototype.DropDatabases = function (callback) {
+            var report = {
+                dropped: ["name"],
+                fail: ["name"]
+            };
+            report.dropped = [];
+            report.fail = [];
+            for (var name_1 in this._dbs) {
+                var db = this._dbs[name_1];
+                report.dropped.push(name_1);
+                db.destroy(function (error) { return void {}; });
+            }
+            return callback(null, report);
+        };
+        LazyBoy.prototype.DropDatabase = function (dbName, callback) {
+            var db = this._getDb(dbName);
+            var dbArray = this._dbs;
+            if (db) {
+                db.destroy(function (error) {
+                    if (error) {
+                        return callback(error, DbDropStatus.Error);
+                    }
+                    delete dbArray[dbName];
+                    return callback(null, DbDropStatus.Dropped);
+                });
+            }
+            else {
+                return callback(new ReportError("database doesn't exist or not managed"), null);
+            }
+        };
+        ;
         return LazyBoy;
     }());
     lazyboyjs.LazyBoy = LazyBoy;

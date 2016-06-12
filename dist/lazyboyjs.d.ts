@@ -34,13 +34,27 @@ export declare module lazyboyjs {
         Not_Connected = 16,
         Error = 32,
     }
+    enum DbDropStatus {
+        Dropped = 3,
+        Conflict = 6,
+        Error = 12,
+    }
+    enum InstanceCreateStatus {
+        Created = 5,
+        Conflict = 10,
+        Updated = 20,
+        Error = 40,
+    }
     interface DbInitializeAllCallback {
         (error: any, result: ReportInitialization): void;
     }
     interface DbCreationCallback {
         (error: any, result: DbCreateStatus): void;
     }
-    interface CreateCallback {
+    interface InstanceCreateCallback {
+        (error: any, result: InstanceCreateStatus): void;
+    }
+    interface DropCallback {
         (error: any, result: any): void;
     }
     class ReportError implements Error {
@@ -75,7 +89,7 @@ export declare module lazyboyjs {
         /**
          * Loading in memory all connections using the dbs names and the Cradle.Connection.
          */
-        Connect(): void;
+        Connect(): this;
         /**
          *
          * @param names {Array} of strings representing the db name.
@@ -93,13 +107,22 @@ export declare module lazyboyjs {
          */
         InitializeDatabase(name: string, callback: DbCreationCallback): void;
         /**
-         *
-         * @param dbName
-         * @param instance
-         * @param callback
+         * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
+         * @param dbName {string}
+         * @param instance {lazyboyjs.LazyInstance}
+         * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        AddInstance(dbName: string, instance: LazyInstance, callback: CreateCallback): void;
-        GetViewResult(dbName: string, viewName: string, key: any, value: string, callback: (error: any, result: any) => void): void;
+        AddInstance(dbName: string, instance: LazyInstance, callback: InstanceCreateCallback): void;
+        /**
+         * Shorter to access the result of a view calculation.
+         * @param dbName {string} database name where the request should be executed.
+         * @param viewName {string} view name initialize the request.
+         * @param key {object} actual value to search inside the view.
+         * @param callback {}
+         */
+        GetViewResult(dbName: string, viewName: string, key: any, callback: (error: any, result: any) => void): void;
+        DropDatabases(callback: (error: any, report: any) => void): void;
+        DropDatabase(dbName: string, callback: DropCallback): void;
         private _injectDatabaseName;
         private _newGUID;
         private _getDb;

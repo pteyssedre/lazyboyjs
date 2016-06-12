@@ -39,6 +39,19 @@ export module lazyboyjs {
         Error = 1 << 5
     }
 
+    export enum DbDropStatus {
+        Dropped = 3 << 0,
+        Conflict = 3 << 1,
+        Error = 3 << 2
+    }
+
+    export enum InstanceCreateStatus {
+        Created = 5 << 0,
+        Conflict = 5 << 1,
+        Updated = 5 << 2,
+        Error = 5 << 3
+    }
+
     export interface DbInitializeAllCallback {
         (error: any, result: ReportInitialization): void;
     }
@@ -47,7 +60,11 @@ export module lazyboyjs {
         (error: any, result: DbCreateStatus): void;
     }
 
-    export interface CreateCallback {
+    export interface InstanceCreateCallback {
+        (error: any, result: InstanceCreateStatus): void;
+    }
+
+    export interface DropCallback {
         (error: any, result: any): void;
     }
 
@@ -103,11 +120,12 @@ export module lazyboyjs {
         /**
          * Loading in memory all connections using the dbs names and the Cradle.Connection.
          */
-        Connect(): void {
+        Connect(): this {
             this._connection = new Cradle.Connection(this.host, this.port, this._options);
             for (var name of this._dbNames) {
                 this._dbs[name] = this._connection.database(name);
             }
+            return this;
         }
 
         /**
@@ -171,12 +189,12 @@ export module lazyboyjs {
         }
 
         /**
-         *
-         * @param dbName
-         * @param instance
-         * @param callback
+         * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
+         * @param dbName {string}
+         * @param instance {lazyboyjs.LazyInstance}
+         * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        AddInstance(dbName: string, instance: LazyInstance, callback: CreateCallback): void {
+        public AddInstance(dbName: string, instance: LazyInstance, callback: InstanceCreateCallback): void {
             let id = this._newGUID();
             if (instance.type) {
                 id = instance.type + "_" + id;
@@ -198,7 +216,14 @@ export module lazyboyjs {
             }
         };
 
-        GetViewResult(dbName: string, viewName: string, key: any, value: string, callback: (error: any, result: any)=>void): void {
+        /**
+         * Shorter to access the result of a view calculation.
+         * @param dbName {string} database name where the request should be executed.
+         * @param viewName {string} view name initialize the request.
+         * @param key {object} actual value to search inside the view.
+         * @param callback {}
+         */
+        public GetViewResult(dbName: string, viewName: string, key: any, callback: (error: any, result: any)=>void): void {
             var db = this._getDb(dbName);
             if (db) {
                 db.view("views/" + viewName, {key: key}, (error: any, result: any): void=> {
@@ -211,7 +236,38 @@ export module lazyboyjs {
             } else {
                 return callback(new ReportError("database doesn't exist or not managed"), null);
             }
+        };
+
+        public DropDatabases(callback: (error: any, report: any)=>void): void {
+            let report = {
+                dropped: ["name"],
+                fail: ["name"]
+            };
+            report.dropped = [];
+            report.fail = [];
+            for (let name in this._dbs) {
+                let db = this._dbs[name];
+                report.dropped.push(name);
+                db.destroy((error: any)=>void{});
+            }
+            return callback(null, report);
         }
+
+        public DropDatabase(dbName: string, callback: DropCallback): void {
+            let db = this._getDb(dbName);
+            let dbArray = this._dbs;
+            if (db) {
+                db.destroy(function (error) {
+                    if (error) {
+                        return callback(error, DbDropStatus.Error);
+                    }
+                    delete dbArray[dbName];
+                    return callback(null, DbDropStatus.Dropped)
+                });
+            } else {
+                return callback(new ReportError("database doesn't exist or not managed"), null);
+            }
+        };
 
         private _injectDatabaseName = (name: string): boolean => {
             try {
