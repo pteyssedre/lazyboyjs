@@ -49,7 +49,7 @@ describe('LazyBoy', function () {
         });
     });
     describe('Create database with views', function () {
-        it("Should create a database with name 'lazy_dbviews' and add Views", function (done) {
+        it("Should create a database with name 'lazy_views' and add Views", function (done) {
             var fromNameToId = {
                 map: function (doc) {
                     if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
@@ -68,14 +68,14 @@ describe('LazyBoy', function () {
             var LazyOptions = {
                 autoConnect: true,
                 views: {
-                    "lazy_dbviews": LazyDesignViews
+                    "lazy_views": LazyDesignViews
                 }
             };
-            var LazyBoy = new lazyboyjs.LazyBoy(LazyOptions).Databases('dbviews');
+            var LazyBoy = new lazyboyjs.LazyBoy(LazyOptions).Databases('views');
             LazyBoy.InitializeAllDatabases(function (error, report) {
                 console.log(report);
                 expect(error).to.equal(null);
-                expect(report.success[0].name).to.equal("lazy_dbviews");
+                expect(report.success[0].name).to.equal("lazy_views");
                 expect(report.success[0].status).to.equal(lazyboyjs.DbCreateStatus.Created);
                 done();
             });
@@ -94,7 +94,7 @@ describe('LazyBoy', function () {
     describe('Drop multiple databases', function () {
         it("Should drop all the databases of this test", function (done) {
             var l = new lazyboyjs.LazyBoy();
-            l.Databases('dbviews', 'test_multiple1', 'test_multiple2', 'test_multiple3').Connect();
+            l.Databases('views', 'test_multiple1', 'test_multiple2', 'test_multiple3').Connect();
             l.DropDatabases(function (error, report) {
                 expect(error).to.equal(null);
                 expect(report.dropped.length).to.equal(4);
