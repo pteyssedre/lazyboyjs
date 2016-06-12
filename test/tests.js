@@ -37,6 +37,17 @@ describe('LazyBoy', function () {
             });
         });
     });
+    describe('Create multiple databases', function () {
+        it("Should create databases with the name " +
+            "'lazy_test_multiple1','lazy_test_multiple2','lazy_test_multiple3'", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('test_multiple1', 'test_multiple2', 'test_multiple3').InitializeAllDatabases(function (error, report) {
+                expect(error).to.equal(null);
+                expect(report.success.length).to.equal(3);
+                done();
+            });
+        });
+    });
     describe('Create database with views', function () {
         it("Should create a database with name 'lazy_dbviews' and add Views", function (done) {
             var fromNameToId = {

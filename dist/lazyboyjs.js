@@ -241,15 +241,19 @@ var lazyboyjs;
          * @param names {Array} of strings representing the db name.
          * @return {lazyboyjs.LazyBoy}
          */
-        LazyBoy.prototype.Databases = function (names) {
-            for (var _i = 0, names_1 = names; _i < names_1.length; _i++) {
-                var name = names_1[_i];
+        LazyBoy.prototype.Databases = function () {
+            var names = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                names[_i - 0] = arguments[_i];
+            }
+            for (var _a = 0, names_1 = names; _a < names_1.length; _a++) {
+                var name = names_1[_a];
                 this._injectDatabaseName(name);
             }
             return this;
         };
         /**
-         * TODO: Create report Interface to export result of creation.
+         * Using the database's name push through {@link LazyBoy#Databases} function
          * @param callback
          */
         LazyBoy.prototype.InitializeAllDatabases = function (callback) {

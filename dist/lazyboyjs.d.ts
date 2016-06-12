@@ -81,9 +81,9 @@ export declare module lazyboyjs {
          * @param names {Array} of strings representing the db name.
          * @return {lazyboyjs.LazyBoy}
          */
-        Databases(names: string[]): this;
+        Databases(...names: string[]): this;
         /**
-         * TODO: Create report Interface to export result of creation.
+         * Using the database's name push through {@link LazyBoy#Databases} function
          * @param callback
          */
         InitializeAllDatabases(callback: DbInitializeAllCallback): void;
