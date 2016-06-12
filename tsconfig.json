@@ -1,0 +1,15 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "declaration": true,
+    "module": "CommonJS",
+    "target": "es5",
+    "noImplicitAny" : true,
+    "sourceMap": false,
+    "outDir": "dist"
+  },
+  "exclude": [
+    "dist/lazyboyjs.d.ts",
+    "node_modules"
+  ]
+}

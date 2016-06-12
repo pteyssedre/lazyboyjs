@@ -1,0 +1,39 @@
+{
+  "name": "lazyboyjs",
+  "version": "1.0.8",
+  "description": "Wrapper to access and manipulate CouchDB server easily",
+  "main": "./dist/lazyboyjs.js",
+  "scripts": {
+    "prepublish": "tsc",
+    "test": "make test"
+  },
+  "typescript": {
+    "definition": "./dist/lazyboyjs.d.ts"
+  },
+  "keywords": [
+    "couchdb",
+    "typescript",
+    "wrapper"
+  ],
+  "files": [
+    "dist/lazyboyjs.d.ts",
+    "dist/lazyboyjs.js",
+    "src/lazyboyjs.ts",
+    "test/tests.js",
+    "typings/globals/cradle.d.ts",
+    "typings/index.d.ts",
+    "makefile"
+  ],
+  "author": {
+    "name": "pteyssedre",
+    "email": "pierre@teyssedre.ca"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "cradle": "^0.7.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.5.3"
+  }
+}
