@@ -1,6 +1,6 @@
 {
   "name": "lazyboyjs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Wrapper to access and manipulate CouchDB server easily",
   "main": "./dist/lazyboyjs.js",
   "scripts": {
