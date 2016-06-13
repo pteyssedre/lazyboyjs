@@ -317,20 +317,20 @@ var lazyboyjs;
         /**
          * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
          * @param dbName {string}
-         * @param instance {lazyboyjs.LazyInstance}
+         * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        LazyBoy.prototype.AddInstance = function (dbName, instance, callback) {
+        LazyBoy.prototype.AddInstance = function (dbName, entry, callback) {
             var id = this._newGUID();
-            if (instance.type) {
-                id = instance.type + "_" + id;
+            if (entry.type) {
+                id = entry.type + "_" + id;
             }
             var t = new Date().getTime();
-            instance.created = t;
-            instance.modified = t;
+            entry.created = t;
+            entry.modified = t;
             var db = this._getDb(dbName);
             if (db) {
-                db.save(id, instance, function (error, result) {
+                db.save(id, entry, function (error, result) {
                     if (error) {
                         console.error(error);
                         return callback(error, null);
@@ -374,9 +374,11 @@ var lazyboyjs;
             report.dropped = [];
             report.fail = [];
             for (var name_1 in this._dbs) {
-                var db = this._dbs[name_1];
-                report.dropped.push(name_1);
-                db.destroy(function (error) { return void {}; });
+                if (this._dbs.hasOwnProperty(name_1)) {
+                    var db = this._dbs[name_1];
+                    report.dropped.push(name_1);
+                    db.destroy(function (error) { return void {}; });
+                }
             }
             return callback(null, report);
         };
@@ -397,6 +399,12 @@ var lazyboyjs;
             }
         };
         ;
+        LazyBoy.DefaultInstance = {
+            created: new Date().getTime(),
+            type: 'default',
+            modified: new Date().getTime(),
+            instance: {}
+        };
         return LazyBoy;
     }());
     lazyboyjs.LazyBoy = LazyBoy;

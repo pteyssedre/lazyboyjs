@@ -94,6 +94,12 @@ export module lazyboyjs {
     }
 
     export class LazyBoy {
+        public static DefaultInstance: LazyInstance = {
+            created: new Date().getTime(),
+            type: 'default',
+            modified: new Date().getTime(),
+            instance: {}
+        };
         public host: string;
         public port: number;
         public hasConnection = (): boolean => {
@@ -191,20 +197,20 @@ export module lazyboyjs {
         /**
          * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
          * @param dbName {string}
-         * @param instance {lazyboyjs.LazyInstance}
+         * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        public AddInstance(dbName: string, instance: LazyInstance, callback: InstanceCreateCallback): void {
+        public AddInstance(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void {
             let id = this._newGUID();
-            if (instance.type) {
-                id = instance.type + "_" + id;
+            if (entry.type) {
+                id = entry.type + "_" + id;
             }
             let t = new Date().getTime();
-            instance.created = t;
-            instance.modified = t;
+            entry.created = t;
+            entry.modified = t;
             let db = this._getDb(dbName);
             if (db) {
-                db.save(id, instance, (error: any, result: any): void=> {
+                db.save(id, entry, (error: any, result: any): void=> {
                     if (error) {
                         console.error(error);
                         return callback(error, null);
@@ -246,9 +252,11 @@ export module lazyboyjs {
             report.dropped = [];
             report.fail = [];
             for (let name in this._dbs) {
-                let db = this._dbs[name];
-                report.dropped.push(name);
-                db.destroy((error: any)=>void{});
+                if (this._dbs.hasOwnProperty(name)) {
+                    let db = this._dbs[name];
+                    report.dropped.push(name);
+                    db.destroy((error: any)=>void{});
+                }
             }
             return callback(null, report);
         }

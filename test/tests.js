@@ -3,6 +3,7 @@ var expect = chai.expect;
 var lazyboyjs = require("../dist/lazyboyjs").lazyboyjs;
 
 describe('LazyBoy', function () {
+    var testInstanceId = null;
     describe('Default options', function () {
         it('If no options are passed in then default values should be applied', function () {
             var l = new lazyboyjs.LazyBoy();
@@ -53,7 +54,7 @@ describe('LazyBoy', function () {
             var fromNameToId = {
                 map: function (doc) {
                     if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
-                        emit(doc.name, doc._id);
+                        emit(doc.instance.name, doc._id);
                     }
                 }
             };
@@ -73,10 +74,37 @@ describe('LazyBoy', function () {
             };
             var LazyBoy = new lazyboyjs.LazyBoy(LazyOptions).Databases('views');
             LazyBoy.InitializeAllDatabases(function (error, report) {
-                console.log(report);
                 expect(error).to.equal(null);
                 expect(report.success[0].name).to.equal("lazy_views");
                 expect(report.success[0].status).to.equal(lazyboyjs.DbCreateStatus.Created);
+                done();
+            });
+        });
+    });
+    describe('Create a instance', function () {
+        it("Should add an instance in the database named 'lazy_views'", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('views').Connect();
+            var entry = lazyboyjs.LazyBoy.DefaultInstance;
+            entry.instance = {name: 'TheInstance', otherValue: 'test'};
+            l.AddInstance('views', entry, function (error, result) {
+                expect(error).to.equal(null);
+                expect(result.ok).to.equal(true);
+                testInstanceId = result.id;
+                done();
+            });
+        });
+    });
+    describe('Get result of view', function () {
+        it("Should return the id of an instance in the database 'lazy_views'", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('views').Connect();
+            var entry = lazyboyjs.LazyBoy.DefaultInstance;
+            entry.instance = {name: 'TheInstance', otherValue: 'test'};
+            l.GetViewResult('views', 'fromNameToId', 'TheInstance', function (error, result) {
+                expect(error).to.equal(null);
+                expect(result.length > 0).to.equal(true);
+                expect(result[0].id).to.equal(testInstanceId);
                 done();
             });
         });

@@ -75,6 +75,7 @@ export declare module lazyboyjs {
         static View_Error_Missing: string;
     }
     class LazyBoy {
+        static DefaultInstance: LazyInstance;
         host: string;
         port: number;
         hasConnection: () => boolean;
@@ -109,10 +110,10 @@ export declare module lazyboyjs {
         /**
          * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
          * @param dbName {string}
-         * @param instance {lazyboyjs.LazyInstance}
+         * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        AddInstance(dbName: string, instance: LazyInstance, callback: InstanceCreateCallback): void;
+        AddInstance(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void;
         /**
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
