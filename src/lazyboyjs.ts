@@ -5,6 +5,8 @@ import * as Cradle from "cradle";
 export module lazyboyjs {
 
     export interface LazyInstance {
+        _id?: string;
+        _rev?: string;
         created: number;
         modified: number;
         type: string;
@@ -62,6 +64,9 @@ export module lazyboyjs {
 
     export interface InstanceCreateCallback {
         (error: any, result: InstanceCreateStatus): void;
+    }
+    export interface InstanceGetCallback {
+        (error: any, result: LazyInstance): void;
     }
 
     export interface DropCallback {
@@ -200,7 +205,7 @@ export module lazyboyjs {
          * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        public AddInstance(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void {
+        public AddEntry(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void {
             let id = this._newGUID();
             if (entry.type) {
                 id = entry.type + "_" + id;
@@ -221,6 +226,64 @@ export module lazyboyjs {
                 return callback(new ReportError("database doesn't exist or not managed"), null);
             }
         };
+
+        public GetEntry(dbName: string, entryId: string, callback: InstanceGetCallback): void {
+            let db = this._getDb(dbName);
+            if (db) {
+                db.get(entryId, (error: Error, document: any): void => {
+                    if (error) {
+                        return callback(error, null);
+                    }
+                    return callback(null, document);
+                });
+            } else {
+                return callback(new ReportError("database doesn't exist or not managed"), null);
+            }
+        };
+
+        public DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean)=>void, trueDelete: boolean) {
+            if (trueDelete) {
+                let db = this._getDb(dbName);
+                if (db) {
+                    db.remove(entry._id, entry._rev, (error: any, result: any): void => {
+                        if (error) {
+                            return callback(error, false);
+                        }
+                        console.log("DeleteEntry", result);
+                        return callback(null, true);
+                    });
+                } else {
+                    return callback(new ReportError("database doesn't exist or not managed"), null);
+                }
+            } else {
+                this.GetEntry(dbName, entry._id, (error: any, document: any): void => {
+                    if (error) {
+                        return callback(error, false);
+                    } else {
+                        document.isDeleted = true;
+                        this.UpdateEntry(dbName, document, (error: any, updated: boolean): void => {
+                            return callback(error, updated);
+                        });
+                    }
+                });
+            }
+        };
+
+        public UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance)=> void) {
+            let db = this._getDb(dbName);
+            if (db) {
+                db.save(entry._id, entry._rev, entry, (error: any, result: any): void => {
+                    if (error) {
+                        return callback(error, false, entry);
+                    }
+                    entry._rev = result._rev;
+                    return callback(null, true, entry);
+                });
+            } else {
+                return callback(new ReportError("database doesn't exist or not managed"), false, entry);
+            }
+        };
+
 
         /**
          * Shorter to access the result of a view calculation.

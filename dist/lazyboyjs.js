@@ -320,7 +320,7 @@ var lazyboyjs;
          * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        LazyBoy.prototype.AddInstance = function (dbName, entry, callback) {
+        LazyBoy.prototype.AddEntry = function (dbName, entry, callback) {
             var id = this._newGUID();
             if (entry.type) {
                 id = entry.type + "_" + id;
@@ -340,6 +340,69 @@ var lazyboyjs;
             }
             else {
                 return callback(new ReportError("database doesn't exist or not managed"), null);
+            }
+        };
+        ;
+        LazyBoy.prototype.GetEntry = function (dbName, entryId, callback) {
+            var db = this._getDb(dbName);
+            if (db) {
+                db.get(entryId, function (error, document) {
+                    if (error) {
+                        return callback(error, null);
+                    }
+                    return callback(null, document);
+                });
+            }
+            else {
+                return callback(new ReportError("database doesn't exist or not managed"), null);
+            }
+        };
+        ;
+        LazyBoy.prototype.DeleteEntry = function (dbName, entry, callback, trueDelete) {
+            var _this = this;
+            if (trueDelete) {
+                var db = this._getDb(dbName);
+                if (db) {
+                    db.remove(entry._id, entry._rev, function (error, result) {
+                        if (error) {
+                            return callback(error, false);
+                        }
+                        console.log("DeleteEntry", result);
+                        return callback(null, true);
+                    });
+                }
+                else {
+                    return callback(new ReportError("database doesn't exist or not managed"), null);
+                }
+            }
+            else {
+                this.GetEntry(dbName, entry._id, function (error, document) {
+                    if (error) {
+                        return callback(error, false);
+                    }
+                    else {
+                        document.isDeleted = true;
+                        _this.UpdateEntry(dbName, document, function (error, updated) {
+                            return callback(error, updated);
+                        });
+                    }
+                });
+            }
+        };
+        ;
+        LazyBoy.prototype.UpdateEntry = function (dbName, entry, callback) {
+            var db = this._getDb(dbName);
+            if (db) {
+                db.save(entry._id, entry._rev, entry, function (error, result) {
+                    if (error) {
+                        return callback(error, false, entry);
+                    }
+                    entry._rev = result._rev;
+                    return callback(null, true, entry);
+                });
+            }
+            else {
+                return callback(new ReportError("database doesn't exist or not managed"), false, entry);
             }
         };
         ;

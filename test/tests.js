@@ -4,6 +4,7 @@ var lazyboyjs = require("../dist/lazyboyjs").lazyboyjs;
 
 describe('LazyBoy', function () {
     var testInstanceId = null;
+    var dropDbsAfterTest = true;
     describe('Default options', function () {
         it('If no options are passed in then default values should be applied', function () {
             var l = new lazyboyjs.LazyBoy();
@@ -87,7 +88,7 @@ describe('LazyBoy', function () {
             l.Databases('views').Connect();
             var entry = lazyboyjs.LazyBoy.DefaultInstance;
             entry.instance = {name: 'TheInstance', otherValue: 'test'};
-            l.AddInstance('views', entry, function (error, result) {
+            l.AddEntry('views', entry, function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.ok).to.equal(true);
                 testInstanceId = result.id;
@@ -109,25 +110,41 @@ describe('LazyBoy', function () {
             });
         });
     });
-    describe('Drop one database', function () {
-        it("Should drop the database named 'lazy_test'", function (done) {
+    describe('Get entry from database', function () {
+        it('Should return a complete entry', function (done) {
             var l = new lazyboyjs.LazyBoy();
-            l.Databases('test').Connect().DropDatabase('test', function (error, status) {
+            l.Databases('views').Connect();
+            l.GetEntry('views', testInstanceId, function (error, document) {
+                console.log(document);
                 expect(error).to.equal(null);
-                expect(status).to.equal(lazyboyjs.DbDropStatus.Dropped);
+                expect(document._id).to.equal(testInstanceId);
+                expect(document.instance.name).to.equal('TheInstance');
                 done();
             });
         });
     });
-    describe('Drop multiple databases', function () {
-        it("Should drop all the databases of this test", function (done) {
-            var l = new lazyboyjs.LazyBoy();
-            l.Databases('views', 'test_multiple1', 'test_multiple2', 'test_multiple3').Connect();
-            l.DropDatabases(function (error, report) {
-                expect(error).to.equal(null);
-                expect(report.dropped.length).to.equal(4);
-                done();
+
+    if (dropDbsAfterTest) {
+        describe('Drop one database', function () {
+            it("Should drop the database named 'lazy_test'", function (done) {
+                var l = new lazyboyjs.LazyBoy();
+                l.Databases('test').Connect().DropDatabase('test', function (error, status) {
+                    expect(error).to.equal(null);
+                    expect(status).to.equal(lazyboyjs.DbDropStatus.Dropped);
+                    done();
+                });
             });
         });
-    });
+        describe('Drop multiple databases', function () {
+            it("Should drop all the databases of this test", function (done) {
+                var l = new lazyboyjs.LazyBoy();
+                l.Databases('views', 'test_multiple1', 'test_multiple2', 'test_multiple3').Connect();
+                l.DropDatabases(function (error, report) {
+                    expect(error).to.equal(null);
+                    expect(report.dropped.length).to.equal(4);
+                    done();
+                });
+            });
+        });
+    }
 });

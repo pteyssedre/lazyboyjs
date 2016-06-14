@@ -1,6 +1,8 @@
 /// <reference path="../typings/index.d.ts" />
 export declare module lazyboyjs {
     interface LazyInstance {
+        _id?: string;
+        _rev?: string;
         created: number;
         modified: number;
         type: string;
@@ -53,6 +55,9 @@ export declare module lazyboyjs {
     }
     interface InstanceCreateCallback {
         (error: any, result: InstanceCreateStatus): void;
+    }
+    interface InstanceGetCallback {
+        (error: any, result: LazyInstance): void;
     }
     interface DropCallback {
         (error: any, result: any): void;
@@ -113,7 +118,10 @@ export declare module lazyboyjs {
          * @param entry {lazyboyjs.LazyInstance}
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
-        AddInstance(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void;
+        AddEntry(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void;
+        GetEntry(dbName: string, entryId: string, callback: InstanceGetCallback): void;
+        DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean) => void, trueDelete: boolean): void;
+        UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance) => void): void;
         /**
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
