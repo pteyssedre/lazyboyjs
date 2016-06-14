@@ -9,13 +9,14 @@ export module lazyboyjs {
         _rev?: string;
         created: number;
         modified: number;
+        isDeleted: boolean;
         type: string;
         instance: any;
     }
 
     export interface LazyView {
-        map(doc: any): any;
-        reduce(doc: any): any;
+        map: any;
+        reduce: any;
     }
 
     export interface LazyDesignViews {
@@ -63,7 +64,7 @@ export module lazyboyjs {
     }
 
     export interface InstanceCreateCallback {
-        (error: any, result: InstanceCreateStatus): void;
+        (error: any, result: InstanceCreateStatus, entry?: LazyInstance): void;
     }
     export interface InstanceGetCallback {
         (error: any, result: LazyInstance): void;
@@ -99,12 +100,23 @@ export module lazyboyjs {
     }
 
     export class LazyBoy {
-        public static DefaultInstance: LazyInstance = {
-            created: new Date().getTime(),
-            type: 'default',
-            modified: new Date().getTime(),
-            instance: {}
+
+        public static NewEntry: (instance: any, type?: string) => LazyInstance = (instance: any, type?: string)=> {
+            let entry = {
+                created: new Date().getTime(),
+                type: '',
+                modified: new Date().getTime(),
+                isDeleted: false,
+                instance: {}
+            };
+            if (type) {
+                entry.type = type;
+            }
+            entry.instance = instance;
+            return entry;
         };
+
+
         public host: string;
         public port: number;
         public hasConnection = (): boolean => {
@@ -116,7 +128,7 @@ export module lazyboyjs {
         private _options: Cradle.Options;
         private _dbNames: string[] = [];
         private _dbs: { [id: string]: Cradle.Database } = {};
-        private _cOaC: (error: any, result: ReportInitialization)=>void = function () {
+        private _cOaC: DbInitializeAllCallback = (error: any, result: ReportInitialization)=> {
         };
         private _report: ReportInitialization = {
             success: [],
@@ -170,6 +182,7 @@ export module lazyboyjs {
                 return callback(name, DbCreateStatus.Not_Connected);
             }
             name = this._formatDbName(name);
+            console.log("INFO", new Date(), "initializing " + name + "");
             let db = this._getDb(name);
             if (!db) {
                 db = this._connection.database(name);
@@ -180,11 +193,13 @@ export module lazyboyjs {
                     return callback(name, DbCreateStatus.Error);
                 }
                 if (exist) {
+                    console.log("INFO", new Date(), "db exist " + name + "");
                     this._validateDesignViews(db, (error, status): void => {
                         let stat = error ? DbCreateStatus.Error : status;
                         return callback(name, stat);
                     });
                 } else {
+                    console.log("INFO", new Date(), "creating " + name + "");
                     db.create((error: any): void => {
                         if (error) {
                             console.log(error);
@@ -218,12 +233,12 @@ export module lazyboyjs {
                 db.save(id, entry, (error: any, result: any): void=> {
                     if (error) {
                         console.error(error);
-                        return callback(error, null);
+                        return callback(error, InstanceCreateStatus.Error, null);
                     }
-                    return callback(null, result);
+                    return callback(null, InstanceCreateStatus.Created, result);
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), null);
+                return callback(new ReportError("database doesn't exist or not managed"), InstanceCreateStatus.Error, null);
             }
         };
 
@@ -392,36 +407,41 @@ export module lazyboyjs {
          * @private
          */
         private _validateDesignViews = (db: Cradle.Database, callback: DbCreationCallback): void => {
-            if (this.options && this.options.views) {
-                let designView: LazyDesignViews = this.options.views[db.name];
-                if (designView) {
-                    db.get(LazyConst.DesignViews, (error: any, document: any): void => {
-                        if (error) {
-                            if (error.reason) {
-                                switch (error.reason) {
-                                    case LazyConst.View_Error_Missing:
-                                        this._saveViews(db, designView, (error: any, result: boolean): void => {
-                                            var s = result ? DbCreateStatus.Created : DbCreateStatus.Created_Without_Views;
-                                            return callback(error, s);
-                                        });
-                                        break;
-                                    default:
-                                        return callback(error, DbCreateStatus.Error);
-                                }
-                            } else {
-                                return callback(error, DbCreateStatus.Error);
-                            }
-                        } else if (document) {
-                            console.log("new document", document);
-                        } else {
-                            return callback(null, DbCreateStatus.Created_Without_Views);
-                        }
-
-                    });
-                }
-            } else {
+            if (!this.options || !this.options.views) {
                 return callback(null, DbCreateStatus.Created_Without_Views);
             }
+            let designView: LazyDesignViews = this.options.views[db.name];
+            if (!designView) {
+                return callback(null, DbCreateStatus.Created_Without_Views);
+            }
+            let evaluateView = (error: any, result: boolean): void => {
+                var s = result ? DbCreateStatus.Created : DbCreateStatus.Error;
+                return callback(error, s);
+            };
+            db.get(LazyConst.DesignViews, (error: any, document: any): void => {
+                if (error) {
+                    if (error.reason) {
+                        switch (error.reason) {
+                            case LazyConst.View_Error_Missing:
+                                this._saveViews(db, designView, evaluateView);
+                                break;
+                            default:
+                                return callback(error, DbCreateStatus.Error);
+                        }
+                    } else {
+                        return callback(error, DbCreateStatus.Error);
+                    }
+                } else if (document) {
+                    if (document.version < designView.version) {
+                        this._saveViews(db, designView, evaluateView);
+                    } else {
+                        return callback(null, DbCreateStatus.UpToDate);
+                    }
+                } else {
+                    return callback(null, DbCreateStatus.Created_Without_Views);
+                }
+
+            });
         };
         /**
          * Shorter to save and validate the {views} of a specific database.
@@ -452,7 +472,7 @@ export module lazyboyjs {
          * @private
          */
         private _continueCreate: DbCreationCallback = (name: string, status: DbCreateStatus): void => {
-            var success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views;
+            var success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views | DbCreateStatus.UpToDate;
             var fail = DbCreateStatus.Error | DbCreateStatus.Not_Connected;
             var r = {name: name, status: status};
             if (status & fail) {

@@ -55,7 +55,7 @@ var lazyboyjs;
             };
             this._dbNames = [];
             this._dbs = {};
-            this._cOaC = function () {
+            this._cOaC = function (error, result) {
             };
             this._report = {
                 success: [],
@@ -110,39 +110,44 @@ var lazyboyjs;
              * @private
              */
             this._validateDesignViews = function (db, callback) {
-                if (_this.options && _this.options.views) {
-                    var designView_1 = _this.options.views[db.name];
-                    if (designView_1) {
-                        db.get(LazyConst.DesignViews, function (error, document) {
-                            if (error) {
-                                if (error.reason) {
-                                    switch (error.reason) {
-                                        case LazyConst.View_Error_Missing:
-                                            _this._saveViews(db, designView_1, function (error, result) {
-                                                var s = result ? DbCreateStatus.Created : DbCreateStatus.Created_Without_Views;
-                                                return callback(error, s);
-                                            });
-                                            break;
-                                        default:
-                                            return callback(error, DbCreateStatus.Error);
-                                    }
-                                }
-                                else {
-                                    return callback(error, DbCreateStatus.Error);
-                                }
-                            }
-                            else if (document) {
-                                console.log("new document", document);
-                            }
-                            else {
-                                return callback(null, DbCreateStatus.Created_Without_Views);
-                            }
-                        });
-                    }
-                }
-                else {
+                if (!_this.options || !_this.options.views) {
                     return callback(null, DbCreateStatus.Created_Without_Views);
                 }
+                var designView = _this.options.views[db.name];
+                if (!designView) {
+                    return callback(null, DbCreateStatus.Created_Without_Views);
+                }
+                var evaluateView = function (error, result) {
+                    var s = result ? DbCreateStatus.Created : DbCreateStatus.Error;
+                    return callback(error, s);
+                };
+                db.get(LazyConst.DesignViews, function (error, document) {
+                    if (error) {
+                        if (error.reason) {
+                            switch (error.reason) {
+                                case LazyConst.View_Error_Missing:
+                                    _this._saveViews(db, designView, evaluateView);
+                                    break;
+                                default:
+                                    return callback(error, DbCreateStatus.Error);
+                            }
+                        }
+                        else {
+                            return callback(error, DbCreateStatus.Error);
+                        }
+                    }
+                    else if (document) {
+                        if (document.version < designView.version) {
+                            _this._saveViews(db, designView, evaluateView);
+                        }
+                        else {
+                            return callback(null, DbCreateStatus.UpToDate);
+                        }
+                    }
+                    else {
+                        return callback(null, DbCreateStatus.Created_Without_Views);
+                    }
+                });
             };
             /**
              * Shorter to save and validate the {views} of a specific database.
@@ -174,7 +179,7 @@ var lazyboyjs;
              * @private
              */
             this._continueCreate = function (name, status) {
-                var success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views;
+                var success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views | DbCreateStatus.UpToDate;
                 var fail = DbCreateStatus.Error | DbCreateStatus.Not_Connected;
                 var r = { name: name, status: status };
                 if (status & fail) {
@@ -285,6 +290,7 @@ var lazyboyjs;
                 return callback(name, DbCreateStatus.Not_Connected);
             }
             name = this._formatDbName(name);
+            console.log("INFO", new Date(), "initializing " + name + "");
             var db = this._getDb(name);
             if (!db) {
                 db = this._connection.database(name);
@@ -295,12 +301,14 @@ var lazyboyjs;
                     return callback(name, DbCreateStatus.Error);
                 }
                 if (exist) {
+                    console.log("INFO", new Date(), "db exist " + name + "");
                     _this._validateDesignViews(db, function (error, status) {
                         var stat = error ? DbCreateStatus.Error : status;
                         return callback(name, stat);
                     });
                 }
                 else {
+                    console.log("INFO", new Date(), "creating " + name + "");
                     db.create(function (error) {
                         if (error) {
                             console.log(error);
@@ -333,13 +341,13 @@ var lazyboyjs;
                 db.save(id, entry, function (error, result) {
                     if (error) {
                         console.error(error);
-                        return callback(error, null);
+                        return callback(error, InstanceCreateStatus.Error, null);
                     }
-                    return callback(null, result);
+                    return callback(null, InstanceCreateStatus.Created, result);
                 });
             }
             else {
-                return callback(new ReportError("database doesn't exist or not managed"), null);
+                return callback(new ReportError("database doesn't exist or not managed"), InstanceCreateStatus.Error, null);
             }
         };
         ;
@@ -462,13 +470,22 @@ var lazyboyjs;
             }
         };
         ;
-        LazyBoy.DefaultInstance = {
-            created: new Date().getTime(),
-            type: 'default',
-            modified: new Date().getTime(),
-            instance: {}
+        LazyBoy.NewEntry = function (instance, type) {
+            var entry = {
+                created: new Date().getTime(),
+                type: '',
+                modified: new Date().getTime(),
+                isDeleted: false,
+                instance: {}
+            };
+            if (type) {
+                entry.type = type;
+            }
+            entry.instance = instance;
+            return entry;
         };
         return LazyBoy;
     }());
     lazyboyjs.LazyBoy = LazyBoy;
 })(lazyboyjs = exports.lazyboyjs || (exports.lazyboyjs = {}));
+//# sourceMappingURL=lazyboyjs.js.map

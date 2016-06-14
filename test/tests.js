@@ -86,8 +86,7 @@ describe('LazyBoy', function () {
         it("Should add an instance in the database named 'lazy_views'", function (done) {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
-            var entry = lazyboyjs.LazyBoy.DefaultInstance;
-            entry.instance = {name: 'TheInstance', otherValue: 'test'};
+            var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
             l.AddEntry('views', entry, function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.ok).to.equal(true);
@@ -100,8 +99,7 @@ describe('LazyBoy', function () {
         it("Should return the id of an instance in the database 'lazy_views'", function (done) {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
-            var entry = lazyboyjs.LazyBoy.DefaultInstance;
-            entry.instance = {name: 'TheInstance', otherValue: 'test'};
+            var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
             l.GetViewResult('views', 'fromNameToId', 'TheInstance', function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.length > 0).to.equal(true);
@@ -115,7 +113,6 @@ describe('LazyBoy', function () {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
             l.GetEntry('views', testInstanceId, function (error, document) {
-                console.log(document);
                 expect(error).to.equal(null);
                 expect(document._id).to.equal(testInstanceId);
                 expect(document.instance.name).to.equal('TheInstance');

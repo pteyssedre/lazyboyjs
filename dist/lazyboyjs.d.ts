@@ -5,12 +5,13 @@ export declare module lazyboyjs {
         _rev?: string;
         created: number;
         modified: number;
+        isDeleted: boolean;
         type: string;
         instance: any;
     }
     interface LazyView {
-        map(doc: any): any;
-        reduce(doc: any): any;
+        map: any;
+        reduce: any;
     }
     interface LazyDesignViews {
         version: number;
@@ -54,7 +55,7 @@ export declare module lazyboyjs {
         (error: any, result: DbCreateStatus): void;
     }
     interface InstanceCreateCallback {
-        (error: any, result: InstanceCreateStatus): void;
+        (error: any, result: InstanceCreateStatus, entry?: LazyInstance): void;
     }
     interface InstanceGetCallback {
         (error: any, result: LazyInstance): void;
@@ -80,7 +81,7 @@ export declare module lazyboyjs {
         static View_Error_Missing: string;
     }
     class LazyBoy {
-        static DefaultInstance: LazyInstance;
+        static NewEntry: (instance: any, type?: string) => LazyInstance;
         host: string;
         port: number;
         hasConnection: () => boolean;
