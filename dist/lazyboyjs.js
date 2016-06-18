@@ -503,4 +503,3 @@ var lazyboyjs;
     }());
     lazyboyjs.LazyBoy = LazyBoy;
 })(lazyboyjs = exports.lazyboyjs || (exports.lazyboyjs = {}));
-//# sourceMappingURL=lazyboyjs.js.map

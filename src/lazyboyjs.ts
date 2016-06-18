@@ -327,7 +327,7 @@ export module lazyboyjs {
                 return callback(new ReportError("database doesn't exist or not managed"), false);
             }
             let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
-            if (!designView) { 
+            if (!designView) {
                 designView = {version: 1, type: 'javascript', views: {}};
                 designView.views[viewName] = view;
                 this.options.views[this._formatDbName(dbName)] = designView;
