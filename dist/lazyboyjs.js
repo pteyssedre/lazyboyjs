@@ -437,6 +437,21 @@ var lazyboyjs;
             }
         };
         ;
+        LazyBoy.prototype.AddView = function (dbName, viewName, view, callback) {
+            var db = this._getDb(dbName);
+            if (!db) {
+                return callback(new ReportError("database doesn't exist or not managed"), false);
+            }
+            var designView = this.options.views[this._formatDbName(dbName)];
+            if (!designView) {
+                designView = { version: 1, type: 'javascript', views: {} };
+                designView.views[viewName] = view;
+                this.options.views[this._formatDbName(dbName)] = designView;
+            }
+            this._validateDesignViews(db, function (error, result) {
+                callback(null, result == DbCreateStatus.Created);
+            });
+        };
         LazyBoy.prototype.DropDatabases = function (callback) {
             var report = {
                 dropped: ["name"],

@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 export declare module lazyboyjs {
     interface LazyInstance {
         _id?: string;
@@ -131,6 +130,7 @@ export declare module lazyboyjs {
          * @param callback {}
          */
         GetViewResult(dbName: string, viewName: string, key: any, callback: (error: any, result: any) => void): void;
+        AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean) => void): void;
         DropDatabases(callback: (error: any, report: any) => void): void;
         DropDatabase(dbName: string, callback: DropCallback): void;
         private _injectDatabaseName;

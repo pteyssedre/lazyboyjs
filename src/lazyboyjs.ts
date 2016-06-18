@@ -299,7 +299,6 @@ export module lazyboyjs {
             }
         };
 
-
         /**
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
@@ -321,6 +320,22 @@ export module lazyboyjs {
                 return callback(new ReportError("database doesn't exist or not managed"), null);
             }
         };
+
+        public AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean)=> void): void {
+            let db = this._getDb(dbName);
+            if (!db) {
+                return callback(new ReportError("database doesn't exist or not managed"), false);
+            }
+            let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
+            if (!designView) { 
+                designView = {version: 1, type: 'javascript', views: {}};
+                designView.views[viewName] = view;
+                this.options.views[this._formatDbName(dbName)] = designView;
+            }
+            this._validateDesignViews(db, (error: any, result: DbCreateStatus): void => {
+                callback(null, result == DbCreateStatus.Created);
+            });
+        }
 
         public DropDatabases(callback: (error: any, report: any)=>void): void {
             let report = {
