@@ -5,12 +5,14 @@
     "module": "CommonJS",
     "target": "es5",
     "noImplicitAny" : true,
-    "sourceMap": false,
-    "outDir": "dist",
-    "noResolve": true
+    "sourceMap": false
   },
   "exclude": [
-    "dist/lazyboyjs.d.ts",
+    "dist",
     "node_modules"
+  ],
+  "files": [
+    "src/lazyboyjs.ts",
+    "index.ts"
   ]
 }

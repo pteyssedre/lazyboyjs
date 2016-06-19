@@ -1,9 +1,9 @@
 {
   "name": "lazyboyjs",
-  "version": "1.2.2",
+  "version": "0.0.6",
   "description": "Wrapper to access and manipulate CouchDB server easily",
-  "main": "dist/lazyboyjs.js",
-  "typings": "dist/lazyboyjs",
+  "main": "index.js",
+  "typings": "index",
   "scripts": {
     "prepublish": "tsc",
     "test": "make test"
@@ -14,9 +14,16 @@
     "wrapper"
   ],
   "files": [
-    "dist",
-    "src",
-    "test"
+    "index.js",
+    "index.ts",
+    "index.d.ts",
+    "src/lazyboyjs.js",
+    "src/lazyboyjs.ts",
+    "src/lazyboyjs.d.ts",
+    "tsconfig.json",
+    "typings.json",
+    "test",
+    "typings"
   ],
   "repository": {
     "type": "git",
