@@ -1,6 +1,6 @@
 var chai = require("chai");
 var expect = chai.expect;
-var lazyboyjs = require("../dist/lazyboyjs").lazyboyjs;
+var lazyboyjs = require("../dist/src/lazyboyjs").lazyboyjs;
 
 describe('LazyBoy', function () {
     var testInstanceId = null;
@@ -59,11 +59,20 @@ describe('LazyBoy', function () {
                     }
                 }
             };
+            var fromNameToIdReduce = {
+                map: function (doc) {
+                    if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
+                        emit(doc.instance.name, doc._id);
+                    }
+                },
+                reduce:"_count()"
+            };
             var LazyDesignViews = {
                 version: 1,
                 type: "javascript",
                 views: {
-                    fromNameToId: fromNameToId
+                    fromNameToId: fromNameToId,
+                    fromNameToIdReduce: fromNameToIdReduce
                 }
             };
 
@@ -89,8 +98,8 @@ describe('LazyBoy', function () {
             var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
             l.AddEntry('views', entry, function (error, result) {
                 expect(error).to.equal(null);
-                expect(result.ok).to.equal(true);
-                testInstanceId = result.id;
+                expect(entry._id).to.not.equal(null);
+                testInstanceId = entry._id;
                 done();
             });
         });
@@ -100,7 +109,18 @@ describe('LazyBoy', function () {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
             var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
-            l.GetViewResult('views', 'fromNameToId', 'TheInstance', function (error, result) {
+            l.GetViewResult('views', 'fromNameToId', {key:'TheInstance'}, function (error, result) {
+                expect(error).to.equal(null);
+                expect(result.length > 0).to.equal(true);
+                expect(result[0].id).to.equal(testInstanceId);
+                done();
+            });
+        });
+        it("Should return the id of an instance in the database 'lazy_views' not reduce", function (done) {
+            var l = new lazyboyjs.LazyBoy();
+            l.Databases('views').Connect();
+            var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
+            l.GetViewResult('views', 'fromNameToIdReduce', {key:'TheInstance', reduce:false}, function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.length > 0).to.equal(true);
                 expect(result[0].id).to.equal(testInstanceId);

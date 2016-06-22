@@ -1,6 +1,6 @@
 {
   "name": "lazyboyjs",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Wrapper to access and manipulate CouchDB server easily",
   "main": "index.js",
   "typings": "index",

@@ -74,12 +74,12 @@ export module lazyboyjs {
         (error: any, result: any): void;
     }
 
-    export class ReportError implements Error {
+    export class LazyBoyError implements Error {
         public name: string;
         public message: string;
 
         constructor(message?: string) {
-            this.name = "ReportError";
+            this.name = "LazyBoyError";
             this.message = message;
         }
     }
@@ -235,10 +235,14 @@ export module lazyboyjs {
                         console.error(error);
                         return callback(error, InstanceCreateStatus.Error, null);
                     }
-                    return callback(null, InstanceCreateStatus.Created, result);
+                    if (result.ok) {
+                        entry._id = result.id;
+                        entry._rev = result._rev;
+                    }
+                    return callback(null, InstanceCreateStatus.Created, entry);
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), InstanceCreateStatus.Error, null);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), InstanceCreateStatus.Error, null);
             }
         };
 
@@ -252,9 +256,9 @@ export module lazyboyjs {
                     return callback(null, document);
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), null);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), null);
             }
-        };
+        }
 
         public DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean)=>void, trueDelete: boolean) {
             if (trueDelete) {
@@ -268,7 +272,7 @@ export module lazyboyjs {
                         return callback(null, true);
                     });
                 } else {
-                    return callback(new ReportError("database doesn't exist or not managed"), null);
+                    return callback(new LazyBoyError("database doesn't exist or not managed"), null);
                 }
             } else {
                 this.GetEntry(dbName, entry._id, (error: any, document: any): void => {
@@ -282,7 +286,7 @@ export module lazyboyjs {
                     }
                 });
             }
-        };
+        }
 
         public UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance)=> void) {
             let db = this._getDb(dbName);
@@ -295,36 +299,36 @@ export module lazyboyjs {
                     return callback(null, true, entry);
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), false, entry);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), false, entry);
             }
-        };
+        }
 
         /**
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
          * @param viewName {string} view name initialize the request.
-         * @param key {object} actual value to search inside the view.
+         * @param params {{key: string, group?: boolean, reduce?: boolean}} actual value to search inside the view.
          * @param callback {}
          */
-        public GetViewResult(dbName: string, viewName: string, key: any, callback: (error: any, result: any)=>void): void {
+        public GetViewResult(dbName: string, viewName: string, params: {key: string, group?: boolean, reduce?: boolean}, callback: (error: any, result: any)=>void): void {
             var db = this._getDb(dbName);
             if (db) {
-                db.view("views/" + viewName, {key: key}, (error: any, result: any): void=> {
+                db.view("views/" + viewName, params, (error: any, result: any): void=> {
                     if (error) {
                         console.error("ERROR", new Date(), error);
-                        return callback(error, result);
+                        throw error;
                     }
-                    return callback(error, result);
+                    return callback(null, result);
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), null);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), null);
             }
-        };
+        }
 
         public AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean)=> void): void {
             let db = this._getDb(dbName);
             if (!db) {
-                return callback(new ReportError("database doesn't exist or not managed"), false);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), false);
             }
             let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
             if (!designView) {
@@ -366,7 +370,7 @@ export module lazyboyjs {
                     return callback(null, DbDropStatus.Dropped)
                 });
             } else {
-                return callback(new ReportError("database doesn't exist or not managed"), null);
+                return callback(new LazyBoyError("database doesn't exist or not managed"), null);
             }
         };
 
@@ -496,7 +500,7 @@ export module lazyboyjs {
                 this._report.success.push(r);
             }
             if (this._dbNames.length == 0) {
-                let error = this._report.fail.length > 0 ? new ReportError("Some db fails") : null;
+                let error = this._report.fail.length > 0 ? new LazyBoyError("Some db fails") : null;
                 this._cOaC(error, this._report);
                 this._report.success = [];
                 this._report.fail = [];
