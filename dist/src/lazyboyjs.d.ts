@@ -1,4 +1,5 @@
 /// <reference path="../../typings/index.d.ts" />
+import LazyFormatLogger = require("lazy-format-logger");
 export declare module lazyboyjs {
     interface LazyInstance {
         _id?: string;
@@ -28,6 +29,7 @@ export declare module lazyboyjs {
             [id: string]: LazyDesignViews;
         };
         autoConnect?: boolean;
+        logLevel?: LazyFormatLogger.LogLevel;
     }
     enum DbCreateStatus {
         Created = 1,
@@ -120,8 +122,28 @@ export declare module lazyboyjs {
          * @param callback {lazyboyjs.InstanceCreateCallback}
          */
         AddEntry(dbName: string, entry: LazyInstance, callback: InstanceCreateCallback): void;
+        /**
+         * Shorter to retrieve instance inside the database.
+         * @param dbName {string} database name where to search.
+         * @param entryId {string} CouchDB id of the instance to fetch.
+         * @param callback {function(error: Error, instance: LazyInstance)}
+         * @throw LazyBoyError
+         */
         GetEntry(dbName: string, entryId: string, callback: InstanceGetCallback): void;
+        /**
+         * Shorter to delete an entry from a specific database.
+         * @param dbName {string} name of the database where to delete.
+         * @param entry {LazyInstance} instance to delete.
+         * @param callback {function(error: Error, delete:boolean)}
+         * @param trueDelete {boolean} flag to force permanent delete
+         */
         DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean) => void, trueDelete: boolean): void;
+        /**
+         * Shorter to update an entry in a specific databases.
+         * @param dbName {string} name of the database where to update.
+         * @param entry {LazyInstance} instance to update.
+         * @param callback {function(error: Error, updated: boolean)}
+         */
         UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance) => void): void;
         /**
          * Shorter to access the result of a view calculation.
@@ -135,9 +157,32 @@ export declare module lazyboyjs {
             group?: boolean;
             reduce?: boolean;
         }, callback: (error: any, result: any) => void): void;
+        /**
+         * Shorter to add a new {@link LazyView} to the {@link LazyDesignViews} associated with the database.
+         * If no {@link LazyDesignViews} exist one will be created and push to the database. Otherwise the version
+         * of the existing one will be incremented.
+         * @param dbName {string}
+         * @param viewName {string}
+         * @param view {LazyView}
+         * @param callback {function(error: Error, result: boolean)}
+         */
         AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean) => void): void;
+        /**
+         * Shorter to destroy all managed databases.
+         * @param callback {function(error: Error, report: object}
+         */
         DropDatabases(callback: (error: any, report: any) => void): void;
+        /**
+         * Shorter to destroy a specific managed database.
+         * @param dbName {string} name of the database to destroy.
+         * @param callback {function(error: Error, report: object)}
+         */
         DropDatabase(dbName: string, callback: DropCallback): void;
+        /**
+         * Helper to reset le logger level. {@see LazyFormatLogger}
+         * @param level
+         */
+        static setLevel(level: LazyFormatLogger.LogLevel): void;
         private _injectDatabaseName;
         private _newGUID;
         private _getDb;

@@ -1,8 +1,11 @@
 /// <reference path="../typings/index.d.ts" />
 
 import * as Cradle from "cradle";
+import LazyFormatLogger = require("lazy-format-logger");
 
 export module lazyboyjs {
+
+    let Log: LazyFormatLogger.Logger = new LazyFormatLogger.Logger();
 
     export interface LazyInstance {
         _id?: string;
@@ -31,6 +34,7 @@ export module lazyboyjs {
         prefix?: string;
         views?: {[id: string]: LazyDesignViews};
         autoConnect?: boolean;
+        logLevel?: LazyFormatLogger.LogLevel;
     }
 
     export enum DbCreateStatus {
@@ -79,6 +83,7 @@ export module lazyboyjs {
         public message: string;
 
         constructor(message?: string) {
+            Log.e("LazyBoyJs", "LazyBoyError", message);
             this.name = "LazyBoyError";
             this.message = message;
         }
@@ -129,6 +134,7 @@ export module lazyboyjs {
         private _dbNames: string[] = [];
         private _dbs: { [id: string]: Cradle.Database } = {};
         private _cOaC: DbInitializeAllCallback = (error: any, result: ReportInitialization)=> {
+            Log.d("LazyBoy", "_cOaC", error, result);
         };
         private _report: ReportInitialization = {
             success: [],
@@ -136,6 +142,9 @@ export module lazyboyjs {
         };
 
         constructor(options?: LazyOptions) {
+            if (options && options.logLevel) {
+                Log = new LazyFormatLogger.Logger(options.logLevel);
+            }
             this.options = options;
             this._initParams();
         }
@@ -143,9 +152,11 @@ export module lazyboyjs {
         /**
          * Loading in memory all connections using the dbs names and the Cradle.Connection.
          */
-        Connect(): this {
+        public Connect(): this {
+            Log.d("LazyBoy", "Connect", "initiating connection using Cradle");
             this._connection = new Cradle.Connection(this.host, this.port, this._options);
             for (var name of this._dbNames) {
+                Log.d("LazyBoy", "Connect", "initiating connection to db " + name);
                 this._dbs[name] = this._connection.database(name);
             }
             return this;
@@ -156,7 +167,7 @@ export module lazyboyjs {
          * @param names {Array} of strings representing the db name.
          * @return {lazyboyjs.LazyBoy}
          */
-        Databases(...names: string[]): this {
+        public Databases(...names: string[]): this {
             for (var name of names) {
                 this._injectDatabaseName(name);
             }
@@ -167,7 +178,7 @@ export module lazyboyjs {
          * Using the database's name push through {@link LazyBoy#Databases} function
          * @param callback
          */
-        InitializeAllDatabases(callback: DbInitializeAllCallback): void {
+        public InitializeAllDatabases(callback: DbInitializeAllCallback): void {
             this._cOaC = callback;
             let n = this._dbNames.splice(0, 1);
             this.InitializeDatabase(n[0], this._continueCreate);
@@ -177,12 +188,12 @@ export module lazyboyjs {
          * @param name {string}
          * @param callback {function}
          */
-        InitializeDatabase(name: string, callback: DbCreationCallback): void {
+        public InitializeDatabase(name: string, callback: DbCreationCallback): void {
             if (!this._connection) {
                 return callback(name, DbCreateStatus.Not_Connected);
             }
             name = this._formatDbName(name);
-            console.log("INFO", new Date(), "initializing " + name + "");
+            Log.i("LazyBoy", "InitializeDatabase", "initializing database " + name);
             let db = this._getDb(name);
             if (!db) {
                 db = this._connection.database(name);
@@ -190,19 +201,20 @@ export module lazyboyjs {
             }
             db.exists((error: any, exist: boolean): void => {
                 if (error) {
+                    Log.e("LazyBoy", "InitializeDatabase", "db.exists", error);
                     return callback(name, DbCreateStatus.Error);
                 }
                 if (exist) {
-                    console.log("INFO", new Date(), "db exist " + name + "");
+                    Log.i("LazyBoy", "InitializeDatabase", "db exist " + name + "");
                     this._validateDesignViews(db, (error, status): void => {
                         let stat = error ? DbCreateStatus.Error : status;
                         return callback(name, stat);
                     });
                 } else {
-                    console.log("INFO", new Date(), "creating " + name + "");
+                    Log.i("LazyBoy", "InitializeDatabase", "creating " + name + "");
                     db.create((error: any): void => {
                         if (error) {
-                            console.log(error);
+                            Log.i(error);
                             return callback(name, DbCreateStatus.Error);
                         }
                         this._validateDesignViews(db, (error, status): void => {
@@ -232,7 +244,7 @@ export module lazyboyjs {
             if (db) {
                 db.save(id, entry, (error: any, result: any): void=> {
                     if (error) {
-                        console.error(error);
+                        Log.e("LazyBoy", "AddEntry", "db.save", error);
                         return callback(error, InstanceCreateStatus.Error, null);
                     }
                     if (result.ok) {
@@ -244,8 +256,15 @@ export module lazyboyjs {
             } else {
                 return callback(new LazyBoyError("database doesn't exist or not managed"), InstanceCreateStatus.Error, null);
             }
-        };
+        }
 
+        /**
+         * Shorter to retrieve instance inside the database.
+         * @param dbName {string} database name where to search.
+         * @param entryId {string} CouchDB id of the instance to fetch.
+         * @param callback {function(error: Error, instance: LazyInstance)}
+         * @throw LazyBoyError
+         */
         public GetEntry(dbName: string, entryId: string, callback: InstanceGetCallback): void {
             let db = this._getDb(dbName);
             if (db) {
@@ -260,6 +279,13 @@ export module lazyboyjs {
             }
         }
 
+        /**
+         * Shorter to delete an entry from a specific database.
+         * @param dbName {string} name of the database where to delete.
+         * @param entry {LazyInstance} instance to delete.
+         * @param callback {function(error: Error, delete:boolean)}
+         * @param trueDelete {boolean} flag to force permanent delete
+         */
         public DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean)=>void, trueDelete: boolean) {
             if (trueDelete) {
                 let db = this._getDb(dbName);
@@ -268,7 +294,7 @@ export module lazyboyjs {
                         if (error) {
                             return callback(error, false);
                         }
-                        console.log("DeleteEntry", result);
+                        Log.i("DeleteEntry", result);
                         return callback(null, true);
                     });
                 } else {
@@ -288,6 +314,12 @@ export module lazyboyjs {
             }
         }
 
+        /**
+         * Shorter to update an entry in a specific databases.
+         * @param dbName {string} name of the database where to update.
+         * @param entry {LazyInstance} instance to update.
+         * @param callback {function(error: Error, updated: boolean)}
+         */
         public UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance)=> void) {
             let db = this._getDb(dbName);
             if (db) {
@@ -315,7 +347,7 @@ export module lazyboyjs {
             if (db) {
                 db.view("views/" + viewName, params, (error: any, result: any): void=> {
                     if (error) {
-                        console.error("ERROR", new Date(), error);
+                        Log.e("LazyBoy", "GetViewResult", error);
                         throw error;
                     }
                     return callback(null, result);
@@ -325,6 +357,15 @@ export module lazyboyjs {
             }
         }
 
+        /**
+         * Shorter to add a new {@link LazyView} to the {@link LazyDesignViews} associated with the database.
+         * If no {@link LazyDesignViews} exist one will be created and push to the database. Otherwise the version
+         * of the existing one will be incremented.
+         * @param dbName {string}
+         * @param viewName {string}
+         * @param view {LazyView}
+         * @param callback {function(error: Error, result: boolean)}
+         */
         public AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean)=> void): void {
             let db = this._getDb(dbName);
             if (!db) {
@@ -341,6 +382,10 @@ export module lazyboyjs {
             });
         }
 
+        /**
+         * Shorter to destroy all managed databases.
+         * @param callback {function(error: Error, report: object}
+         */
         public DropDatabases(callback: (error: any, report: any)=>void): void {
             let report = {
                 dropped: ["name"],
@@ -351,13 +396,24 @@ export module lazyboyjs {
             for (let name in this._dbs) {
                 if (this._dbs.hasOwnProperty(name)) {
                     let db = this._dbs[name];
-                    report.dropped.push(name);
-                    db.destroy((error: any)=>void{});
+                    db.destroy((error: any): void => {
+                        if (error) {
+                            Log.e("LazyBoy", "DropDatabases", "db.destroy", error);
+                            throw error;
+                        } else {
+                            report.dropped.push(db.name);
+                        }
+                    });
                 }
             }
             return callback(null, report);
         }
 
+        /**
+         * Shorter to destroy a specific managed database.
+         * @param dbName {string} name of the database to destroy.
+         * @param callback {function(error: Error, report: object)}
+         */
         public DropDatabase(dbName: string, callback: DropCallback): void {
             let db = this._getDb(dbName);
             let dbArray = this._dbs;
@@ -372,7 +428,15 @@ export module lazyboyjs {
             } else {
                 return callback(new LazyBoyError("database doesn't exist or not managed"), null);
             }
-        };
+        }
+
+        /**
+         * Helper to reset le logger level. {@see LazyFormatLogger}
+         * @param level
+         */
+        public static setLevel(level: LazyFormatLogger.LogLevel): void {
+            Log = new LazyFormatLogger.Logger(level);
+        }
 
         private _injectDatabaseName = (name: string): boolean => {
             try {
@@ -383,7 +447,7 @@ export module lazyboyjs {
                 let t = this._dbNames.push(n);
                 return t > -1;
             } catch (exception) {
-                console.log(exception);
+                Log.i("LazyBoy", "_injectDatabaseName", exception);
             }
             return false;
         };
@@ -442,9 +506,11 @@ export module lazyboyjs {
                     if (error.reason) {
                         switch (error.reason) {
                             case LazyConst.View_Error_Missing:
+                                Log.d("LazyBoy", "_validateDesignViews", "Missing view");
                                 this._saveViews(db, designView, evaluateView);
                                 break;
                             default:
+                                Log.e("LazyBoy", "_validateDesignViews", error);
                                 return callback(error, DbCreateStatus.Error);
                         }
                     } else {
@@ -473,10 +539,9 @@ export module lazyboyjs {
             if (views) {
                 db.save(LazyConst.DesignViews, views, (error: any, result: any): void => {
                     if (error) {
-                        console.error(error);
+                        Log.e("LazyBoy", "_saveViews", error);
                         return callback(error, false);
                     }
-                    //TODO: validate result object
                     return callback(null, true);
                 });
             } else {
@@ -504,6 +569,7 @@ export module lazyboyjs {
                 this._cOaC(error, this._report);
                 this._report.success = [];
                 this._report.fail = [];
+                Log.i("LazyBoy", "InitializeDatabase", "_continueCreate", this._report);
                 return;
             }
             let n = this._dbNames.splice(0, 1);

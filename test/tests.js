@@ -1,10 +1,20 @@
 var chai = require("chai");
 var expect = chai.expect;
 var lazyboyjs = require("../dist/src/lazyboyjs").lazyboyjs;
+var LazyFormatLogger = require("lazy-format-logger");
 
 describe('LazyBoy', function () {
     var testInstanceId = null;
     var dropDbsAfterTest = true;
+    describe('Default error', function () {
+        it('Should log a line', function () {
+            var except = new lazyboyjs.LazyBoyError("Test logging");
+        });
+        it('Should NOT log a line', function () {
+            lazyboyjs.LazyBoy.setLevel(LazyFormatLogger.LogLevel.INFO);
+            var except = new lazyboyjs.LazyBoyError("Test logging");
+        });
+    });
     describe('Default options', function () {
         it('If no options are passed in then default values should be applied', function () {
             var l = new lazyboyjs.LazyBoy();
@@ -65,7 +75,7 @@ describe('LazyBoy', function () {
                         emit(doc.instance.name, doc._id);
                     }
                 },
-                reduce:"_count()"
+                reduce: "_count()"
             };
             var LazyDesignViews = {
                 version: 1,
@@ -109,7 +119,7 @@ describe('LazyBoy', function () {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
             var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
-            l.GetViewResult('views', 'fromNameToId', {key:'TheInstance'}, function (error, result) {
+            l.GetViewResult('views', 'fromNameToId', {key: 'TheInstance'}, function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.length > 0).to.equal(true);
                 expect(result[0].id).to.equal(testInstanceId);
@@ -120,7 +130,10 @@ describe('LazyBoy', function () {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
             var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
-            l.GetViewResult('views', 'fromNameToIdReduce', {key:'TheInstance', reduce:false}, function (error, result) {
+            l.GetViewResult('views', 'fromNameToIdReduce', {
+                key: 'TheInstance',
+                reduce: false
+            }, function (error, result) {
                 expect(error).to.equal(null);
                 expect(result.length > 0).to.equal(true);
                 expect(result[0].id).to.equal(testInstanceId);
