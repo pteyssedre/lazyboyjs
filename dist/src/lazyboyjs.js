@@ -169,6 +169,7 @@ var lazyboyjs;
                             Log.e("LazyBoy", "_saveViews", error);
                             return callback(error, false);
                         }
+                        Log.d("LazyBoy", "_saveViews", result);
                         return callback(null, true);
                     });
                 }
