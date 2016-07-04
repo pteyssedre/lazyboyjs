@@ -1,6 +1,6 @@
 var chai = require("chai");
 var expect = chai.expect;
-var lazyboyjs = require("../dist/src/lazyboyjs").lazyboyjs;
+var lazyboyjs = require("../dist/lazyboyjs").lazyboyjs;
 var LazyFormatLogger = require("lazy-format-logger");
 
 describe('LazyBoy', function () {
@@ -17,6 +17,7 @@ describe('LazyBoy', function () {
     });
     describe('Default options', function () {
         it('If no options are passed in then default values should be applied', function () {
+            lazyboyjs.LazyBoy.setLevel(LazyFormatLogger.LogLevel.VERBOSE);
             var l = new lazyboyjs.LazyBoy();
             expect(l.options.host).equal("127.0.0.1");
             expect(l.options.port).equal(5984);

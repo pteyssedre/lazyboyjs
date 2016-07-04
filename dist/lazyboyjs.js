@@ -498,6 +498,7 @@ var lazyboyjs;
          * @param callback {function(error: Error, report: object}
          */
         LazyBoy.prototype.DropDatabases = function (callback) {
+            var _this = this;
             var report = {
                 dropped: ["name"],
                 fail: ["name"]
@@ -510,10 +511,17 @@ var lazyboyjs;
                     db_1.destroy(function (error) {
                         if (error) {
                             Log.e("LazyBoy", "DropDatabases", "db.destroy", error);
-                            throw error;
+                            report.fail.push(db_1.name);
+                            if (report.dropped.length + report.fail.length == Object.keys(_this._dbs).length) {
+                                return callback(null, report);
+                            }
                         }
                         else {
+                            Log.d("LazyBoy", "DropDatabases", "db.destroy");
                             report.dropped.push(db_1.name);
+                            if (report.dropped.length + report.fail.length == Object.keys(_this._dbs).length) {
+                                return callback(null, report);
+                            }
                         }
                     });
                 }
@@ -522,7 +530,6 @@ var lazyboyjs;
             for (var name_1 in this._dbs) {
                 _loop_1(name_1);
             }
-            return callback(null, report);
         };
         /**
          * Shorter to destroy a specific managed database.

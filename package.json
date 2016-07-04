@@ -1,9 +1,9 @@
 {
   "name": "lazyboyjs",
-  "version": "0.0.9",
-  "description": "Wrapper to access and manipulate CouchDB server easily",
-  "main": "index.js",
-  "typings": "index",
+  "version": "0.0.10",
+  "description": "Wrapper to access and manipulate CouchDB server and entries easily",
+  "main": "dist/lazyboyjs.js",
+  "typings": "dist/lazyboyjs",
   "scripts": {
     "prepublish": "tsc",
     "test": "make test"
@@ -14,24 +14,21 @@
     "wrapper"
   ],
   "files": [
-    "index.js",
-    "index.ts",
-    "index.d.ts",
-    "src/lazyboyjs.js",
     "src/lazyboyjs.ts",
-    "src/lazyboyjs.d.ts",
     "tsconfig.json",
     "typings.json",
     "test",
-    "typings"
+    "typings",
+    "dist"
   ],
   "repository": {
     "type": "git",
-    "url": "https://pteyssedre@bitbucket.org/pteyssedre/lazyboyjs.git"
+    "url": "https://github.com/pteyssedre/lazyboyjs"
   },
   "author": {
     "name": "pteyssedre",
-    "email": "pierre@teyssedre.ca"
+    "email": "pierre@teyssedre.ca",
+    "url": "https://github.com/pteyssedre"
   },
   "license": "Apache-2.0",
   "dependencies": {

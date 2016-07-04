@@ -399,14 +399,21 @@ export module lazyboyjs {
                     db.destroy((error: any): void => {
                         if (error) {
                             Log.e("LazyBoy", "DropDatabases", "db.destroy", error);
-                            throw error;
+                            report.fail.push(db.name);
+                            if (report.dropped.length + report.fail.length == Object.keys(this._dbs).length) {
+                                return callback(null, report);
+                            }
+                            //throw error;
                         } else {
+                            Log.d("LazyBoy", "DropDatabases", "db.destroy");
                             report.dropped.push(db.name);
+                            if (report.dropped.length + report.fail.length == Object.keys(this._dbs).length) {
+                                return callback(null, report);
+                            }
                         }
                     });
                 }
             }
-            return callback(null, report);
         }
 
         /**
