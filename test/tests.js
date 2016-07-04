@@ -23,7 +23,7 @@ describe('LazyBoy', function () {
             expect(l.options.port).equal(5984);
             expect(l.options.prefix).equal("lazy");
             expect(l.options.autoConnect).equal(true);
-            expect(l.options.views).equal(undefined);
+            expect(Object.keys(l.options.views).length).equal(0);
         });
     });
     describe('AutoConnect false', function () {
@@ -98,6 +98,22 @@ describe('LazyBoy', function () {
                 expect(error).to.equal(null);
                 expect(report.success[0].name).to.equal("lazy_views");
                 expect(report.success[0].status).to.equal(lazyboyjs.DbCreateStatus.Created);
+                done();
+            });
+        });
+        it('Should add view to database to existing LazyDesignView', function (done) {
+            var myNewView = {
+                map: function (doc) {
+                    if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
+                        emit(doc.instance.name, doc._id);
+                    }
+                },
+                reduce: "_count()"
+            };
+            var LazyBoy = new lazyboyjs.LazyBoy().Databases('views').Connect();
+            LazyBoy.AddView('views', 'myNewView', myNewView, function(error, success){
+                expect(error).to.equal(null);
+                expect(success).to.equal(true);
                 done();
             });
         });

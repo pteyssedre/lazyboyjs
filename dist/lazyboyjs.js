@@ -215,7 +215,7 @@ var lazyboyjs;
                 _this._cOaC = function () {
                 };
                 if (!_this.options) {
-                    _this.options = { host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true };
+                    _this.options = { host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {} };
                 }
                 if (_this.options.autoConnect !== false) {
                     _this.options.autoConnect = true;
@@ -487,10 +487,15 @@ var lazyboyjs;
             if (!designView) {
                 designView = { version: 1, type: 'javascript', views: {} };
                 designView.views[viewName] = view;
-                this.options.views[this._formatDbName(dbName)] = designView;
             }
+            else {
+                designView.version++;
+                designView.views[viewName] = view;
+            }
+            this.options.views[this._formatDbName(dbName)] = designView;
             this._validateDesignViews(db, function (error, result) {
-                callback(null, result == DbCreateStatus.Created);
+                Log.d("LazyBoy", "AddView", error, result);
+                callback(null, result == DbCreateStatus.Created || result == DbCreateStatus.UpToDate);
             });
         };
         /**

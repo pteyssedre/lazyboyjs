@@ -375,10 +375,14 @@ export module lazyboyjs {
             if (!designView) {
                 designView = {version: 1, type: 'javascript', views: {}};
                 designView.views[viewName] = view;
-                this.options.views[this._formatDbName(dbName)] = designView;
+            } else {
+                designView.version++;
+                designView.views[viewName] = view;
             }
+            this.options.views[this._formatDbName(dbName)] = designView;
             this._validateDesignViews(db, (error: any, result: DbCreateStatus): void => {
-                callback(null, result == DbCreateStatus.Created);
+                Log.d("LazyBoy", "AddView", error, result);
+                callback(null, result == DbCreateStatus.Created || result == DbCreateStatus.UpToDate);
             });
         }
 
@@ -594,7 +598,7 @@ export module lazyboyjs {
             this._cOaC = function () {
             };
             if (!this.options) {
-                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true};
+                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
             }
             if (this.options.autoConnect !== false) {
                 this.options.autoConnect = true;
