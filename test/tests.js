@@ -123,8 +123,9 @@ describe('LazyBoy', function () {
             var l = new lazyboyjs.LazyBoy();
             l.Databases('views').Connect();
             var entry = lazyboyjs.LazyBoy.NewEntry({name: 'TheInstance', otherValue: 'test'});
-            l.AddEntry('views', entry, function (error, result) {
+            l.AddEntry('views', entry, function (error, status, entry) {
                 expect(error).to.equal(null);
+                expect(status).to.equal(lazyboyjs.InstanceCreateStatus.Created);
                 expect(entry._id).to.not.equal(null);
                 testInstanceId = entry._id;
                 done();

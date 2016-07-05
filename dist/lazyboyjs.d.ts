@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 import LazyFormatLogger = require("lazy-format-logger");
 export declare module lazyboyjs {
     interface LazyInstance {

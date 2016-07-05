@@ -13,6 +13,7 @@
     "node_modules"
   ],
   "files": [
-    "src/lazyboyjs.ts"
+    "src/lazyboyjs.ts",
+    "typings/index.d.ts"
   ]
 }

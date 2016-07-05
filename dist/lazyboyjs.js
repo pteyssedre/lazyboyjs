@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 "use strict";
 var Cradle = require("cradle");
 var LazyFormatLogger = require("lazy-format-logger");

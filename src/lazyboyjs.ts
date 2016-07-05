@@ -1,5 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
-
 import * as Cradle from "cradle";
 import LazyFormatLogger = require("lazy-format-logger");
 
