@@ -1,5 +1,9 @@
 import LazyFormatLogger = require("lazy-format-logger");
 export declare module lazyboyjs {
+    /**
+     * Definition of {@link LazyInstance} object.
+     * Those are the minimal required fields for an instance to be valid.
+     */
     interface LazyInstance {
         _id?: string;
         _rev?: string;
@@ -9,10 +13,18 @@ export declare module lazyboyjs {
         type: string;
         instance: any;
     }
+    /**
+     * Definition of {@link LazyView} object.
+     * Those are the minimal required fields for an instance to be valid.
+     */
     interface LazyView {
         map: any;
         reduce: any;
     }
+    /**
+     * Definition of {@link LazyDesignViews} object.
+     * Those are the minimal required fields for an instance to be valid.
+     */
     interface LazyDesignViews {
         version: number;
         type: string;
@@ -20,6 +32,10 @@ export declare module lazyboyjs {
             [id: string]: LazyView;
         };
     }
+    /**
+     * Definition of {@link LazyOptions} object.
+     * Those are the minimal required fields for an instance to be valid.
+     */
     interface LazyOptions {
         host?: string;
         port?: number;
@@ -49,21 +65,72 @@ export declare module lazyboyjs {
         Updated = 20,
         Error = 40,
     }
+    /**
+     * Definition of the callback function when {@link LazyBoy.InitializeAllDatabases} method is invoked.
+     */
     interface DbInitializeAllCallback {
-        (error: any, result: ReportInitialization): void;
+        /**
+         * In order to establish a status of the result of the initialization process,
+         * that function will have an {Error} parameter that could be {@code null}
+         * @param error {@link Error} that error could be coming from 'CouchDB Server' or from 'LazyBoy' it can be null.
+         * @param result {@link ReportInitialization}
+         */
+        (error: Error, result: ReportInitialization): void;
     }
+    /**
+     * Definition of the callback function when {@link LazyBoy.InitializeDatabase} method is invoked.
+     */
     interface DbCreationCallback {
-        (error: any, result: DbCreateStatus): void;
+        /**
+         * On each {@link LazyBoy.InitializeDatabase} call a callback is expected to get the status.
+         * An {@link Error} could be raise, if everything went well the argument 'error' will be null.
+         * The state of the database status will be determine by the value of 'result' as {DbCreateStatus}.
+         * The 'dbName' will be provide if needed.
+         * @param error {@link Error} that error could be coming from 'CouchDB Server' or from 'LazyBoy' it can be null.
+         * @param result {@link DbCreateStatus} indicator of the status of the db.
+         * @param [dbName] {@link string} database name which was initialize.
+         */
+        (error: Error, result: DbCreateStatus, dbName?: string): void;
     }
+    /**
+     * Definition of the callback function when {LazyBoy.AddEntry} method is invoked.
+     */
     interface InstanceCreateCallback {
-        (error: any, result: InstanceCreateStatus, entry?: LazyInstance): void;
+        /**
+         *
+         * @param error {@link Error} that error could be coming from 'CouchDB Server' or from 'LazyBoy' it can be null.
+         * @param result {@link InstanceCreateStatus}
+         * @param entry {@link LazyInstance}
+         */
+        (error: Error, result: InstanceCreateStatus, entry?: LazyInstance): void;
     }
+    /**
+     * Definition of the callback function when {LazyBoy.GetEntry} method is invoked.
+     */
     interface InstanceGetCallback {
-        (error: any, result: LazyInstance): void;
+        /**
+         *
+         * @param error {@link Error} that error could be coming from 'CouchDB Server' or from 'LazyBoy' it can be null.
+         * @param result
+         */
+        (error: Error, result: LazyInstance): void;
     }
+    /**
+     * Definition of the callback function when {LazyBoy.DropDatabase} method is invoked.
+     */
     interface DropCallback {
-        (error: any, result: any): void;
+        /**
+         *
+         * @param error {@link Error} that error could be coming from 'CouchDB Server' or from 'LazyBoy' it can be null.
+         * @param result {@link Object}
+         */
+        (error: Error, result: any): void;
     }
+    /**
+     * Definition of an custom {@link Error} that can be raised and managed by upper layers.
+     * If one of the callback return an {@link Error} different from 'null'
+     * the upper layer can check if the name value is equal to "LazyBoyError"
+     */
     class LazyBoyError implements Error {
         name: string;
         message: string;
@@ -73,7 +140,10 @@ export declare module lazyboyjs {
         success: Array<CreateReportEntry>;
         fail: Array<CreateReportEntry>;
     }
-    class CreateReportEntry {
+    /**
+     * Definition of the report produce each time {@link LazyBoy.InitializeAllDatabases} method is invoked.
+     */
+    interface CreateReportEntry {
         name: string;
         status: DbCreateStatus;
     }
@@ -82,6 +152,12 @@ export declare module lazyboyjs {
         static View_Error_Missing: string;
     }
     class LazyBoy {
+        /**
+         *
+         * @param instance {Object}
+         * @param type {string}
+         * @returns {LazyInstance}
+         */
         static NewEntry: (instance: any, type?: string) => LazyInstance;
         host: string;
         port: number;
@@ -96,22 +172,23 @@ export declare module lazyboyjs {
         constructor(options?: LazyOptions);
         /**
          * Loading in memory all connections using the dbs names and the Cradle.Connection.
+         * @return {LazyBoy}
          */
         Connect(): this;
         /**
          *
          * @param names {Array} of strings representing the db name.
-         * @return {lazyboyjs.LazyBoy}
+         * @return {LazyBoy}
          */
         Databases(...names: string[]): this;
         /**
          * Using the database's name push through {@link LazyBoy#Databases} function
-         * @param callback
+         * @param callback {DbCreationCallback}
          */
         InitializeAllDatabases(callback: DbInitializeAllCallback): void;
         /**
          * @param name {string}
-         * @param callback {function}
+         * @param callback {DbCreationCallback}
          */
         InitializeDatabase(name: string, callback: DbCreationCallback): void;
         /**
@@ -182,10 +259,40 @@ export declare module lazyboyjs {
          * @param level
          */
         static setLevel(level: LazyFormatLogger.LogLevel): void;
+        /**
+         *
+         * @param name {string}
+         * @returns {boolean}
+         * @private
+         */
         private _injectDatabaseName;
+        /**
+         *
+         * @returns {string}
+         * @private
+         */
         private _newGUID;
+        /**
+         *
+         * @param dbName
+         * @returns {Object}
+         * @private
+         */
         private _getDb;
+        /**
+         *
+         * @param dbName
+         * @returns {string}
+         * @private
+         */
         private _formatDbName;
+        /**
+         *
+         * @param dbName {string}
+         * @param db {Cradle.Database}
+         * @returns {boolean}
+         * @private
+         */
         private _putDb;
         /**
          * In order to create or update some views for a DB, a validation must be done using the "version" property
@@ -206,6 +313,7 @@ export declare module lazyboyjs {
         /**
          * Callback use when {InitializeAllDatabases} is called. It will
          * continue the creation of all databases contain in {_dbNames}.
+         * @param error {Error} error.
          * @param name {string} database name.
          * @param status {@link DbCreateStatus} status of the operation.
          * @private

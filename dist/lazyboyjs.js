@@ -26,21 +26,20 @@ var lazyboyjs;
         InstanceCreateStatus[InstanceCreateStatus["Error"] = 40] = "Error";
     })(lazyboyjs.InstanceCreateStatus || (lazyboyjs.InstanceCreateStatus = {}));
     var InstanceCreateStatus = lazyboyjs.InstanceCreateStatus;
+    /**
+     * Definition of an custom {@link Error} that can be raised and managed by upper layers.
+     * If one of the callback return an {@link Error} different from 'null'
+     * the upper layer can check if the name value is equal to "LazyBoyError"
+     */
     var LazyBoyError = (function () {
         function LazyBoyError(message) {
-            Log.e("LazyBoyJs", "LazyBoyError", message);
             this.name = "LazyBoyError";
             this.message = message;
+            Log.e("LazyBoyJs", this.name, message);
         }
         return LazyBoyError;
     }());
     lazyboyjs.LazyBoyError = LazyBoyError;
-    var CreateReportEntry = (function () {
-        function CreateReportEntry() {
-        }
-        return CreateReportEntry;
-    }());
-    lazyboyjs.CreateReportEntry = CreateReportEntry;
     var LazyConst = (function () {
         function LazyConst() {
         }
@@ -64,6 +63,12 @@ var lazyboyjs;
                 success: [],
                 fail: []
             };
+            /**
+             *
+             * @param name {string}
+             * @returns {boolean}
+             * @private
+             */
             this._injectDatabaseName = function (name) {
                 try {
                     var n = name;
@@ -78,12 +83,23 @@ var lazyboyjs;
                 }
                 return false;
             };
+            /**
+             *
+             * @returns {string}
+             * @private
+             */
             this._newGUID = function () {
                 var s4 = function () {
                     return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
                 };
                 return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4();
             };
+            /**
+             *
+             * @param dbName
+             * @returns {Object}
+             * @private
+             */
             this._getDb = function (dbName) {
                 if (dbName == null || dbName.length == 0) {
                     return null;
@@ -91,12 +107,25 @@ var lazyboyjs;
                 dbName = _this._formatDbName(dbName);
                 return _this._dbs[dbName];
             };
+            /**
+             *
+             * @param dbName
+             * @returns {string}
+             * @private
+             */
             this._formatDbName = function (dbName) {
                 if (dbName.indexOf(this.options.prefix + "_") == -1) {
                     dbName = this.options.prefix + "_" + dbName;
                 }
                 return dbName;
             };
+            /**
+             *
+             * @param dbName {string}
+             * @param db {Cradle.Database}
+             * @returns {boolean}
+             * @private
+             */
             this._putDb = function (dbName, db) {
                 if (dbName == null || dbName.length == 0) {
                     return false;
@@ -179,23 +208,27 @@ var lazyboyjs;
             /**
              * Callback use when {InitializeAllDatabases} is called. It will
              * continue the creation of all databases contain in {_dbNames}.
+             * @param error {Error} error.
              * @param name {string} database name.
              * @param status {@link DbCreateStatus} status of the operation.
              * @private
              */
-            this._continueCreate = function (name, status) {
+            this._continueCreate = function (error, status, name) {
                 var success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views | DbCreateStatus.UpToDate;
                 var fail = DbCreateStatus.Error | DbCreateStatus.Not_Connected;
                 var r = { name: name, status: status };
-                if (status & fail) {
+                if (status & fail || error) {
+                    if (error) {
+                        Log.c("LazyBoy", "InitializeDatabase", "_continueCreate", error);
+                    }
                     _this._report.fail.push(r);
                 }
                 else if (status & success) {
                     _this._report.success.push(r);
                 }
                 if (_this._dbNames.length == 0) {
-                    var error = _this._report.fail.length > 0 ? new LazyBoyError("Some db fails") : null;
-                    _this._cOaC(error, _this._report);
+                    var error_1 = _this._report.fail.length > 0 ? new LazyBoyError("Some db fails") : null;
+                    _this._cOaC(error_1, _this._report);
                     _this._report.success = [];
                     _this._report.fail = [];
                     Log.i("LazyBoy", "InitializeDatabase", "_continueCreate", _this._report);
@@ -255,6 +288,7 @@ var lazyboyjs;
         }
         /**
          * Loading in memory all connections using the dbs names and the Cradle.Connection.
+         * @return {LazyBoy}
          */
         LazyBoy.prototype.Connect = function () {
             Log.d("LazyBoy", "Connect", "initiating connection using Cradle");
@@ -269,7 +303,7 @@ var lazyboyjs;
         /**
          *
          * @param names {Array} of strings representing the db name.
-         * @return {lazyboyjs.LazyBoy}
+         * @return {LazyBoy}
          */
         LazyBoy.prototype.Databases = function () {
             var names = [];
@@ -284,7 +318,7 @@ var lazyboyjs;
         };
         /**
          * Using the database's name push through {@link LazyBoy#Databases} function
-         * @param callback
+         * @param callback {DbCreationCallback}
          */
         LazyBoy.prototype.InitializeAllDatabases = function (callback) {
             this._cOaC = callback;
@@ -293,12 +327,12 @@ var lazyboyjs;
         };
         /**
          * @param name {string}
-         * @param callback {function}
+         * @param callback {DbCreationCallback}
          */
         LazyBoy.prototype.InitializeDatabase = function (name, callback) {
             var _this = this;
             if (!this._connection) {
-                return callback(name, DbCreateStatus.Not_Connected);
+                return callback(null, DbCreateStatus.Not_Connected, name);
             }
             name = this._formatDbName(name);
             Log.i("LazyBoy", "InitializeDatabase", "initializing database " + name);
@@ -310,13 +344,13 @@ var lazyboyjs;
             db.exists(function (error, exist) {
                 if (error) {
                     Log.e("LazyBoy", "InitializeDatabase", "db.exists", error);
-                    return callback(name, DbCreateStatus.Error);
+                    return callback(null, DbCreateStatus.Error, name);
                 }
                 if (exist) {
                     Log.i("LazyBoy", "InitializeDatabase", "db exist " + name + "");
                     _this._validateDesignViews(db, function (error, status) {
                         var stat = error ? DbCreateStatus.Error : status;
-                        return callback(name, stat);
+                        return callback(null, stat, name);
                     });
                 }
                 else {
@@ -324,11 +358,11 @@ var lazyboyjs;
                     db.create(function (error) {
                         if (error) {
                             Log.i(error);
-                            return callback(name, DbCreateStatus.Error);
+                            return callback(null, DbCreateStatus.Error, name);
                         }
                         _this._validateDesignViews(db, function (error, status) {
                             var stat = error ? DbCreateStatus.Error : status;
-                            return callback(name, stat);
+                            return callback(null, stat, name);
                         });
                     });
                 }
@@ -563,6 +597,12 @@ var lazyboyjs;
         LazyBoy.setLevel = function (level) {
             Log = new LazyFormatLogger.Logger(level);
         };
+        /**
+         *
+         * @param instance {Object}
+         * @param type {string}
+         * @returns {LazyInstance}
+         */
         LazyBoy.NewEntry = function (instance, type) {
             var entry = {
                 created: new Date().getTime(),
