@@ -43,7 +43,8 @@ describe('LazyBoy', function () {
     describe('Create database', function () {
         it("Should create a database with the name 'lazy_test'", function (done) {
             var l = new lazyboyjs.LazyBoy();
-            l.InitializeDatabase('test', function (name, status) {
+            l.InitializeDatabase('test', function (error, status, name) {
+                expect(error).to.equal(null);
                 expect(name).to.equal('lazy_test');
                 expect(status).to.equal(lazyboyjs.DbCreateStatus.Created_Without_Views);
                 done();
