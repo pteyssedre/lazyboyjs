@@ -46,6 +46,17 @@ export declare module lazyboyjs {
         autoConnect?: boolean;
         logLevel?: LazyFormatLogger.LogLevel;
     }
+    interface LazyViewParams {
+        key?: string;
+        keys?: string[];
+        startkey?: string;
+        endkey?: string;
+        limit?: number;
+        descending?: boolean;
+        include_docs?: boolean;
+        group?: boolean;
+        reduce?: boolean;
+    }
     /**
      * Enumeration of status for Database creation
      */
@@ -235,14 +246,10 @@ export declare module lazyboyjs {
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
          * @param viewName {string} view name initialize the request.
-         * @param params {{key: string, group?: boolean, reduce?: boolean}} actual value to search inside the view.
+         * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
          * @param callback {}
          */
-        GetViewResult(dbName: string, viewName: string, params: {
-            key: string;
-            group?: boolean;
-            reduce?: boolean;
-        }, callback: (error: any, result: any) => void): void;
+        GetViewResult(dbName: string, viewName: string, params: LazyViewParams, callback: (error: any, result: any) => void): void;
         /**
          * Shorter to add a new {@link LazyView} to the {@link LazyDesignViews} associated with the database.
          * If no {@link LazyDesignViews} exist one will be created and push to the database. Otherwise the version

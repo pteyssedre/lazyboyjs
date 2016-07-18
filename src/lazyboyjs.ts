@@ -51,6 +51,18 @@ export module lazyboyjs {
         logLevel?: LazyFormatLogger.LogLevel;
     }
 
+    export interface LazyViewParams {
+        key?: string,
+        keys?: string[],
+        startkey?: string,
+        endkey?: string,
+        limit?: number,
+        descending?: boolean,
+        include_docs?: boolean,
+        group?: boolean,
+        reduce?: boolean
+    }
+
     /**
      * Enumeration of status for Database creation
      */
@@ -425,10 +437,10 @@ export module lazyboyjs {
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
          * @param viewName {string} view name initialize the request.
-         * @param params {{key: string, group?: boolean, reduce?: boolean}} actual value to search inside the view.
+         * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
          * @param callback {}
          */
-        public GetViewResult(dbName: string, viewName: string, params: {key: string, group?: boolean, reduce?: boolean}, callback: (error: any, result: any)=>void): void {
+        public GetViewResult(dbName: string, viewName: string, params: LazyViewParams, callback: (error: any, result: any)=>void): void {
             var db = this._getDb(dbName);
             if (db) {
                 db.view("views/" + viewName, params, (error: any, result: any): void=> {

@@ -495,7 +495,7 @@ var lazyboyjs;
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
          * @param viewName {string} view name initialize the request.
-         * @param params {{key: string, group?: boolean, reduce?: boolean}} actual value to search inside the view.
+         * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
          * @param callback {}
          */
         LazyBoy.prototype.GetViewResult = function (dbName, viewName, params, callback) {
