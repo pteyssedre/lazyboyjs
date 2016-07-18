@@ -46,6 +46,9 @@ export declare module lazyboyjs {
         autoConnect?: boolean;
         logLevel?: LazyFormatLogger.LogLevel;
     }
+    /**
+     * Enumeration of status for Database creation
+     */
     enum DbCreateStatus {
         Created = 1,
         UpToDate = 2,
@@ -54,11 +57,17 @@ export declare module lazyboyjs {
         Not_Connected = 16,
         Error = 32,
     }
+    /**
+     * Enumeration of status for Database drop
+     */
     enum DbDropStatus {
         Dropped = 3,
         Conflict = 6,
         Error = 12,
     }
+    /**
+     * Enumeration of status for Entry creation
+     */
     enum InstanceCreateStatus {
         Created = 5,
         Conflict = 10,
@@ -150,6 +159,7 @@ export declare module lazyboyjs {
     class LazyConst {
         static DesignViews: string;
         static View_Error_Missing: string;
+        static View_Error_Deleted: string;
     }
     class LazyBoy {
         /**

@@ -51,6 +51,9 @@ export module lazyboyjs {
         logLevel?: LazyFormatLogger.LogLevel;
     }
 
+    /**
+     * Enumeration of status for Database creation
+     */
     export enum DbCreateStatus {
         Created = 1 << 0,
         UpToDate = 1 << 1,
@@ -60,12 +63,18 @@ export module lazyboyjs {
         Error = 1 << 5
     }
 
+    /**
+     * Enumeration of status for Database drop
+     */
     export enum DbDropStatus {
         Dropped = 3 << 0,
         Conflict = 3 << 1,
         Error = 3 << 2
     }
 
+    /**
+     * Enumeration of status for Entry creation
+     */
     export enum InstanceCreateStatus {
         Created = 5 << 0,
         Conflict = 5 << 1,
@@ -171,6 +180,7 @@ export module lazyboyjs {
     export class LazyConst {
         static DesignViews = "_design/views";
         static View_Error_Missing = "missing";
+        static View_Error_Deleted = "deleted";
     }
 
     export class LazyBoy {
@@ -623,6 +633,7 @@ export module lazyboyjs {
                     if (error.reason) {
                         switch (error.reason) {
                             case LazyConst.View_Error_Missing:
+                            case LazyConst.View_Error_Deleted:
                                 Log.d("LazyBoy", "_validateDesignViews", "Missing view");
                                 this._saveViews(db, designView, evaluateView);
                                 break;
