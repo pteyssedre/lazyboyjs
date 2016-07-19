@@ -4,6 +4,9 @@ var LazyFormatLogger = require("lazy-format-logger");
 var lazyboyjs;
 (function (lazyboyjs) {
     var Log = new LazyFormatLogger.Logger();
+    /**
+     * Enumeration of status for Database creation
+     */
     (function (DbCreateStatus) {
         DbCreateStatus[DbCreateStatus["Created"] = 1] = "Created";
         DbCreateStatus[DbCreateStatus["UpToDate"] = 2] = "UpToDate";
@@ -13,12 +16,18 @@ var lazyboyjs;
         DbCreateStatus[DbCreateStatus["Error"] = 32] = "Error";
     })(lazyboyjs.DbCreateStatus || (lazyboyjs.DbCreateStatus = {}));
     var DbCreateStatus = lazyboyjs.DbCreateStatus;
+    /**
+     * Enumeration of status for Database drop
+     */
     (function (DbDropStatus) {
         DbDropStatus[DbDropStatus["Dropped"] = 3] = "Dropped";
         DbDropStatus[DbDropStatus["Conflict"] = 6] = "Conflict";
         DbDropStatus[DbDropStatus["Error"] = 12] = "Error";
     })(lazyboyjs.DbDropStatus || (lazyboyjs.DbDropStatus = {}));
     var DbDropStatus = lazyboyjs.DbDropStatus;
+    /**
+     * Enumeration of status for Entry creation
+     */
     (function (InstanceCreateStatus) {
         InstanceCreateStatus[InstanceCreateStatus["Created"] = 5] = "Created";
         InstanceCreateStatus[InstanceCreateStatus["Conflict"] = 10] = "Conflict";
@@ -45,6 +54,7 @@ var lazyboyjs;
         }
         LazyConst.DesignViews = "_design/views";
         LazyConst.View_Error_Missing = "missing";
+        LazyConst.View_Error_Deleted = "deleted";
         return LazyConst;
     }());
     lazyboyjs.LazyConst = LazyConst;
@@ -158,6 +168,7 @@ var lazyboyjs;
                         if (error.reason) {
                             switch (error.reason) {
                                 case LazyConst.View_Error_Missing:
+                                case LazyConst.View_Error_Deleted:
                                     Log.d("LazyBoy", "_validateDesignViews", "Missing view");
                                     _this._saveViews(db, designView, evaluateView);
                                     break;
@@ -484,7 +495,7 @@ var lazyboyjs;
          * Shorter to access the result of a view calculation.
          * @param dbName {string} database name where the request should be executed.
          * @param viewName {string} view name initialize the request.
-         * @param params {{key: string, group?: boolean, reduce?: boolean}} actual value to search inside the view.
+         * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
          * @param callback {}
          */
         LazyBoy.prototype.GetViewResult = function (dbName, viewName, params, callback) {
