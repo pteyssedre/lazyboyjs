@@ -5,6 +5,10 @@ export module lazyboyjs {
 
     let Log: LazyFormatLogger.Logger = new LazyFormatLogger.Logger();
 
+    export function setLevel(level: LazyFormatLogger.LogLevel): void {
+        Log = new LazyFormatLogger.Logger(level);
+    }
+
     /**
      * Definition of {@link LazyInstance} object.
      * Those are the minimal required fields for an instance to be valid.
@@ -540,14 +544,6 @@ export module lazyboyjs {
         }
 
         /**
-         * Helper to reset le logger level. {@see LazyFormatLogger}
-         * @param level
-         */
-        public static setLevel(level: LazyFormatLogger.LogLevel): void {
-            Log = new LazyFormatLogger.Logger(level);
-        }
-
-        /**
          *
          * @param name {string}
          * @returns {boolean}
@@ -609,7 +605,7 @@ export module lazyboyjs {
         /**
          *
          * @param dbName {string}
-         * @param db {Cradle.Database}
+         * @param db {object}
          * @returns {boolean}
          * @private
          */
@@ -761,6 +757,665 @@ export module lazyboyjs {
             this._options = {cache: true, raw: false, forceSave: true};
             if (this.options) {
                 this.options.autoConnect ? this.Connect() : false;
+            }
+        };
+    }
+
+    export class LazyBoyAsync {
+
+        /**
+         *
+         * @param instance {Object}
+         * @param type {string}
+         * @returns {LazyInstance}
+         */
+        public static NewEntry: (instance: any, type?: string) => LazyInstance = (instance: any, type?: string)=> {
+            let entry = {
+                created: new Date().getTime(),
+                type: '',
+                modified: new Date().getTime(),
+                isDeleted: false,
+                instance: {}
+            };
+            if (type) {
+                entry.type = type;
+            }
+            entry.instance = instance;
+            return entry;
+        };
+
+
+        public host: string;
+        public port: number;
+        public options: LazyOptions;
+
+        private _connection: Cradle.Connection;
+        private _options: Cradle.Options;
+        private _dbNames: string[] = [];
+        private _dbs: { [id: string]: Cradle.Database } = {};
+
+        constructor(options?: LazyOptions) {
+            if (options && options.logLevel) {
+                Log = new LazyFormatLogger.Logger(options.logLevel);
+            }
+            this.options = options;
+            this._initParams();
+        }
+
+        /**
+         * Loading in memory all connections using the dbs names and the Cradle.Connection.
+         * @return {Promise<boolean>}
+         */
+        async ConnectAsync(): Promise<boolean> {
+            return new Promise<boolean>((resolve, reject)=> {
+                let result: boolean = false;
+                try {
+                    Log.d("LazyBoy", "Connect", "initiating connection using Cradle");
+                    this._connection = new Cradle.Connection(this.host, this.port, this._options);
+                    for (var name of this._dbNames) {
+                        Log.d("LazyBoy", "Connect", "initiating connection to db " + name);
+                        this._dbs[name] = this._connection.database(name);
+                    }
+                    result = true;
+                    return resolve(result);
+                } catch (exception) {
+                    return reject(exception);
+                }
+            });
+        }
+
+        /**
+         * Shorter to add databases to
+         * @param names {Array} of strings representing the db name.
+         * @return {LazyBoy}
+         */
+        Databases(...names: string[]): this {
+            for (var name of names) {
+                this._injectDatabaseName(name);
+            }
+            return this;
+        }
+
+        /**
+         * Using the database's name push through {@link LazyBoy#Databases} function
+         * @return {Promise<ReportInitialization>}
+         */
+        async InitializeAllDatabasesAsync(): Promise<ReportInitialization> {
+            return new Promise<ReportInitialization>(async(resolve, reject)=> {
+                let gReport: ReportInitialization = {success: [], fail: []};
+                let success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views | DbCreateStatus.UpToDate;
+                let fail = DbCreateStatus.Error | DbCreateStatus.Not_Connected;
+                try {
+                    for (let name of this._dbNames) {
+                        let report = await this.InitializeDatabaseAsync(name);
+                        if (report.status & success) {
+                            gReport.success.push(report);
+                        } else if (report.status & fail) {
+                            gReport.fail.push(report);
+                        }
+                        if ((gReport.success.length + gReport.fail.length) === this._dbNames.length) {
+                            return resolve(gReport);
+                        }
+                    }
+                } catch (exception) {
+                    return reject(exception);
+                }
+            });
+        }
+
+        /**
+         * @param name {string}
+         * @return {Promise<{status: DbCreateStatus, name: string}>}
+         */
+        async InitializeDatabaseAsync(name: string): Promise<{status: DbCreateStatus, name: string}> {
+            return new Promise<{status: DbCreateStatus, name: string}>((resolve, reject)=> {
+                let r: {status: DbCreateStatus, name: string} = {status: DbCreateStatus.Not_Connected, name: name};
+                try {
+                    if (!this._connection) {
+                        return resolve(r);
+                    }
+                    Log.i("LazyBoy", "InitializeDatabaseAsync", "initializing database " + name);
+                    let db = this._getAndConnectDb(name);
+                    db.exists(async(error: any, exist: boolean)=> {
+                        if (error) {
+                            Log.e("LazyBoy", "InitializeDatabaseAsync", "db.exists", error);
+                            r.status = DbCreateStatus.Error;
+                            return resolve(r);
+                        }
+                        if (exist) {
+                            Log.i("LazyBoy", "InitializeDatabaseAsync", "db exist " + name + "");
+                            let report = await this._validateDesignViewsAsync(db);
+                            r.status = report.error ? DbCreateStatus.Error : report.status;
+                            return resolve(r);
+                        } else {
+                            Log.i("LazyBoy", "InitializeDatabaseAsync", "creating " + name + "");
+                            db.create(async(error: any)=> {
+                                if (error) {
+                                    Log.i(error);
+                                    r.status = DbCreateStatus.Error;
+                                    return resolve(r);
+                                }
+                                let report = await this._validateDesignViewsAsync(db);
+                                r.status = report.error ? DbCreateStatus.Error : report.status;
+                                return resolve(r);
+                            });
+                        }
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * For an easy manage of instance all object push to a 'lazy db' will be encapsulated inside an {@link LazyInstance}.
+         * @param dbName {string} database name where to insert data.
+         * @param data {object}
+         * @return {Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}>}
+         */
+        async AddEntryAsync(dbName: string, data: {type?: string, data: Object}): Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}> {
+            return new Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}>((resolve, reject)=> {
+                let r: {error: Error, result: InstanceCreateStatus, entry?: LazyInstance} = {
+                    error: null,
+                    result: InstanceCreateStatus.Error
+                };
+                try {
+                    let entry = LazyBoyAsync.NewEntry(data.data, data.type);
+                    let id = this._newGUID();
+                    if (entry.type) {
+                        id = entry.type + "_" + id;
+                    }
+                    let t = new Date().getTime();
+                    entry.created = t;
+                    entry.modified = t;
+                    let db = this._getAndConnectDb(dbName);
+                    db.save(id, entry, (error: any, result: any): void=> {
+                        if (error) {
+                            Log.e("LazyBoyAsync", "AddEntryAsync", "db.save", error);
+                            r.error = error;
+                            r.result = InstanceCreateStatus.Error;
+                            r.entry = null;
+                            return resolve(r);
+                        }
+                        if (result.ok) {
+                            entry._id = result.id;
+                            entry._rev = result._rev;
+                        }
+                        r.error = null;
+                        r.result = InstanceCreateStatus.Created;
+                        r.entry = entry;
+                        return resolve(r);
+                    });
+                    return resolve(r);
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to retrieve instance inside the database.
+         * @param dbName {string} database name where to search.
+         * @param entryId {string} CouchDB id of the instance to fetch.
+         * @return {Promise<{error: Error, data: LazyInstance}>}
+         */
+        async GetEntryAsync(dbName: string, entryId: string): Promise<{error: Error, data: LazyInstance}> {
+            return new Promise<{error: Error, data: LazyInstance}>((resolve, reject)=> {
+                let r: {error: Error, data: LazyInstance} = {error: null, data: null};
+                try {
+                    let db = this._getAndConnectDb(dbName);
+                    db.get(entryId, (error: Error, document: any): void => {
+                        r.error = error;
+                        if (error) {
+                            r.data = null;
+                            return resolve(r);
+                        }
+                        r.data = document;
+                        return resolve(r);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to delete an entry from a specific database.
+         * @param dbName {string} name of the database where to delete.
+         * @param entry {LazyInstance} instance to delete.
+         * @param trueDelete {boolean} flag to force permanent delete
+         * @return {Promise<{error: Error, deleted: boolean}>}
+         */
+        async DeleteEntryAsync(dbName: string, entry: LazyInstance, trueDelete: boolean): Promise<{error: Error, deleted: boolean}> {
+            return new Promise<{error: Error, deleted: boolean}>(async(resolve, reject)=> {
+                let r: {error: Error, deleted: boolean} = {error: null, deleted: false};
+                try {
+                    if (trueDelete) {
+                        let db = this._getAndConnectDb(dbName);
+                        db.remove(entry._id, entry._rev, (error: any, result: any): void => {
+                            r.error = error;
+                            if (error) {
+                                r.deleted = false;
+                                return resolve(r);
+                            }
+                            Log.i("DeleteEntry", result);
+                            r.deleted = true;
+                            return resolve(r);
+                        });
+                    } else {
+                        let gRep = await this.GetEntryAsync(dbName, entry._id);
+                        r.error = gRep.error;
+                        if (r.error) {
+                            r.deleted = false;
+                            return resolve(r);
+                        } else {
+                            gRep.data.isDeleted = true;
+                            let report = await this.UpdateEntryAsync(dbName, gRep.data);
+                            r.error = report.error;
+                            r.deleted = report.updated;
+                            return resolve(r);
+                        }
+                    }
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to update an entry in a specific databases.
+         * @param dbName {string} name of the database where to update.
+         * @param entry {LazyInstance} instance to update.
+         * @return {Promise<{error: Error, updated: boolean, data: LazyInstance}>}
+         */
+        async UpdateEntryAsync(dbName: string, entry: LazyInstance): Promise<{error: Error, updated: boolean, data: LazyInstance}> {
+            return new Promise<{error: Error, updated: boolean, data: LazyInstance}>((resolve, reject)=> {
+                let r: {error: Error, updated: boolean, data: LazyInstance} = {error: null, updated: false, data: null};
+                try {
+                    let db = this._getAndConnectDb(dbName);
+                    db.save(entry._id, entry._rev, entry, (error: any, result: any): void => {
+                        if (error) {
+                            r.error = error;
+                            r.updated = false;
+                            r.data = null;
+                            return resolve(r);
+                        }
+                        entry._rev = result._rev;
+                        r.error = null;
+                        r.updated = true;
+                        r.data = entry;
+                        return resolve(r);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to access the result of a view calculation.
+         * @param dbName {string} database name where the request should be executed.
+         * @param viewName {string} view name initialize the request.
+         * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
+         * @return {Promise<{error: Error, result: any}>}
+         */
+        async GetViewResultAsync(dbName: string, viewName: string, params: LazyViewParams): Promise<{error: Error, result: any}> {
+            return new Promise<{error: Error, result: any}>((resolve, reject)=> {
+                let r: {error: Error, result: any} = {error: null, result: null};
+                try {
+                    let db = this._getAndConnectDb(dbName);
+                    db.view("views/" + viewName, params, (error: any, result: any): void=> {
+                        if (error) {
+                            Log.e("LazyBoy", "GetViewResult", error);
+                            throw error;
+                        }
+                        return resolve(r);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to add a new {@link LazyView} to the {@link LazyDesignViews} associated with the database.
+         * If no {@link LazyDesignViews} exist one will be created and push to the database. Otherwise the version
+         * of the existing one will be incremented.
+         * @param dbName {string}
+         * @param viewName {string}
+         * @param view {LazyView}
+         * @return {Promise<{error: Error, result: boolean}>}
+         */
+        async AddViewAsync(dbName: string, viewName: string, view: LazyView): Promise<{error: Error, result: boolean}> {
+            return new Promise<{error: Error, result: boolean}>(async(resolve, reject)=> {
+                let r: {error: Error, result: boolean} = {error: null, result: false};
+                try {
+                    this._updateView(dbName, viewName, view);
+                    let db = this._getAndConnectDb(dbName);
+                    let report = await this._validateDesignViewsAsync(db);
+                    r.error = report.error;
+                    r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
+                    return resolve(r);
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         *
+         * @param dbName {string} database name where to push the desing view.
+         * @param views {Object}
+         * @return {Promise<{error: Error, result: boolean}>}
+         * @constructor
+         */
+        async AddViewsAsync(dbName: string, views: {name: string, view: LazyView}[]): Promise<{error: Error, result: boolean}> {
+            return new Promise<{error: Error, result: boolean}>(async(resolve, reject)=> {
+                let r: {error: Error, result: boolean} = {error: null, result: false};
+                try {
+                    for (let view of views) {
+                        this._updateView(dbName, view.name, view.view);
+                    }
+                    let db = this._getAndConnectDb(dbName);
+                    let report = await this._validateDesignViewsAsync(db);
+                    r.error = report.error;
+                    r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
+                    return resolve(r);
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to destroy all managed databases.
+         * @return {Promise<{success: string[], fail: string[]}>}
+         */
+        async DropAllDatabasesAsync(): Promise<{success: string[], fail: string[]}> {
+            return new Promise<{success: string[], fail: string[]}>(async(resolve, reject)=> {
+                let r: {success: string[], fail: string[]} = {success: [], fail: []};
+                try {
+                    for (let name of this._dbNames) {
+                        let report = await this.DropDatabaseAsync(name);
+                        if (report.error) {
+                            r.fail.push(name);
+                        } else {
+                            r.success.push(name);
+                        }
+                    }
+                    return resolve(r);
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to destroy a specific managed database.
+         * @param dbName {string} name of the database to destroy.
+         * @return {Promise<{error: Error, status: DbDropStatus}>}
+         */
+        async DropDatabaseAsync(dbName: string): Promise<{error: Error, status: DbDropStatus}> {
+            return new Promise<{error: Error, status: DbDropStatus}>((resolve, reject)=> {
+                let r: {error: Error, status: DbDropStatus} = {error: null, status: DbDropStatus.Error};
+                try {
+                    let db = this._getAndConnectDb(dbName);
+                    db.destroy((error)=> {
+                        if (error) {
+                            r.error = error;
+                            r.status = DbDropStatus.Error;
+                            return resolve(r);
+                        }
+                        delete this._dbs[dbName];
+                        r.error = null;
+                        r.status = DbDropStatus.Dropped;
+                        return resolve(r);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         *
+         * @param name {string}
+         * @returns {boolean}
+         * @private
+         */
+        private _injectDatabaseName = (name: string): boolean => {
+            try {
+                let n = name;
+                if (this.options.prefix) {
+                    n = this.options.prefix + "_" + n;
+                }
+                let t = this._dbNames.push(n);
+                return t > -1;
+            } catch (exception) {
+                Log.i("LazyBoy", "_injectDatabaseName", exception);
+            }
+            return false;
+        };
+        /**
+         *
+         * @returns {string}
+         * @private
+         */
+        private _newGUID = (): string => {
+            let s4 = (): string=> {
+                return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
+            };
+            return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4()
+        };
+
+        /**
+         *
+         * @param dbName
+         * @returns {Object}
+         * @private
+         */
+        private _getDb = (dbName: string): Cradle.Database => {
+            if (dbName == null || dbName.length == 0) {
+                return null;
+            }
+            dbName = this._formatDbName(dbName);
+            return this._dbs[dbName];
+        };
+        /**
+         *
+         * @param dbName
+         * @returns {string}
+         * @private
+         */
+        private _formatDbName = function (dbName: string) {
+            if (dbName.indexOf(this.options.prefix + "_") == -1) {
+                dbName = this.options.prefix + "_" + dbName;
+            }
+            return dbName;
+        };
+        /**
+         *
+         * @param dbName {string}
+         * @param db {object}
+         * @returns {boolean}
+         * @private
+         */
+        private _putDb = (dbName: string, db: Cradle.Database): boolean => {
+            if (dbName == null || dbName.length == 0) {
+                return false;
+            }
+            dbName = this._formatDbName(dbName);
+            this._dbs[dbName] = db;
+            return true;
+        };
+
+
+        private _updateView(dbName: string, viewName: string, view: LazyView): void {
+            let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
+            if (!designView) {
+                designView = {version: 1, type: 'javascript', views: {}};
+                designView.views[viewName] = view;
+            } else {
+                designView.version++;
+                designView.views[viewName] = view;
+            }
+            this.options.views[this._formatDbName(dbName)] = designView;
+        }
+
+        /**
+         *
+         * @param name
+         * @return {object}
+         * @private
+         */
+        private _getAndConnectDb(name: string): Cradle.Database {
+            name = this._formatDbName(name);
+            let db = this._getDb(name);
+            if (!db) {
+                db = this._connection.database(name);
+                this._putDb(name, db);
+            }
+            return db;
+        }
+
+        /**
+         * In order to create or update some views for a DB, a validation must be done using the "version" property
+         * of the {@link LazyDesignViews#version}
+         * @param db {object} database object.
+         * @return {Promise<{error: Error, status: DbCreateStatus}>}
+         * @private
+         */
+        private async _validateDesignViewsAsync(db: Cradle.Database): Promise<{error: Error, status: DbCreateStatus}> {
+            return new Promise<{error: Error, status: DbCreateStatus}>((resolve, reject)=> {
+                let r: {error: Error, status: DbCreateStatus} = {error: null, status: DbCreateStatus.Error};
+                try {
+                    if (!this.options || !this.options.views) {
+                        r.status = DbCreateStatus.Created_Without_Views;
+                        return resolve(r);
+                    }
+                    let designView: LazyDesignViews = this.options.views[db.name];
+                    if (!designView) {
+                        r.status = DbCreateStatus.Created_Without_Views;
+                        return resolve(r);
+                    }
+                    db.get(LazyConst.DesignViews, async(error: any, document: any)=> {
+                        if (error) {
+                            if (error.reason) {
+                                switch (error.reason) {
+                                    case LazyConst.View_Error_Missing:
+                                    case LazyConst.View_Error_Deleted:
+                                        Log.d("LazyBoy", "_validateDesignViewsAsync", "Missing view");
+                                        let report = await this._saveViewsAsync(db, designView);
+                                        r.error = report.error;
+                                        r.status = report.result ? DbCreateStatus.Created : DbCreateStatus.Created_Without_Views;
+                                        r.status = r.error ? DbCreateStatus.Error : r.status;
+                                        return resolve(r);
+                                    default:
+                                        Log.e("LazyBoy", "_validateDesignViewsAsync", error);
+                                        r.error = error;
+                                        r.status = DbCreateStatus.Error;
+                                        return resolve(r);
+                                }
+                            } else {
+                                r.error = error;
+                                r.status = DbCreateStatus.Error;
+                                return resolve(r);
+                            }
+                        } else if (document) {
+                            if (document.version < designView.version) {
+                                let report = await this._saveViewsAsync(db, designView);
+                                r.error = report.error;
+                                r.status = report.result ? DbCreateStatus.Created : DbCreateStatus.Created_Without_Views;
+                                r.status = r.error ? DbCreateStatus.Error : r.status;
+                                return resolve(r);
+                            } else {
+                                r.error = null;
+                                r.status = DbCreateStatus.UpToDate;
+                                return resolve(r);
+                            }
+                        } else {
+                            r.error = null;
+                            r.status = DbCreateStatus.Created_Without_Views;
+                            return resolve(r);
+                        }
+
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Shorter to save and validate the {views} of a specific database.
+         * @param db {object}
+         * @param views {LazyDesignViews}
+         * @return {Promise<{error: Error, result: boolean}>}
+         * @private
+         */
+        private async _saveViewsAsync(db: Cradle.Database, views: LazyDesignViews): Promise<{error: Error, result: boolean}> {
+            return new Promise<{error: Error, result: boolean}>((resolve, reject)=> {
+                let r: {error: Error, result: boolean} = {error: null, result: false};
+                try {
+                    if (views) {
+                        db.save(LazyConst.DesignViews, views, (error: any, result: any): void => {
+                            if (error) {
+                                Log.e("LazyBoy", "_saveViews", error);
+                                r.error = error;
+                                r.result = false;
+                                return resolve(r);
+                            }
+                            Log.d("LazyBoy", "_saveViewsAsync", result);
+                            r.result = true;
+                            return resolve(r);
+                        });
+                    } else {
+                        return resolve(r);
+                    }
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        /**
+         * Initialization of parameter and {options} object.
+         * It will create default {options} object.
+         * By default autoConnect it force to ensure use quickly.
+         * @private
+         */
+        private _initParams = (): void => {
+            if (!this.options) {
+                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
+            }
+            if (this.options.autoConnect !== false) {
+                this.options.autoConnect = true;
+            }
+            if (!this.host) {
+                if (!this.options.host) {
+                    this.options.host = "127.0.0.1";
+                }
+                this.host = this.options.host;
+            }
+            if (!this.port || isNaN(this.port)) {
+                if (!this.options.port || isNaN(this.options.port)) {
+                    this.options.port = 5984;
+                }
+                this.port = this.options.port;
+            }
+            if (!this.options.prefix) {
+                this.options.prefix = "lazy"
+            } else {
+                let p = this.options.prefix.lastIndexOf("_");
+                let l = this.options.prefix.length;
+                if (p === l - 1) {
+                    this.options.prefix = this.options.prefix.substr(0, p);
+                }
+            }
+            // maybe adding https support ...
+            this._options = {cache: true, raw: false, forceSave: true};
+            if (this.options) {
+                this.options.autoConnect ? this.ConnectAsync() : false;
             }
         };
     }

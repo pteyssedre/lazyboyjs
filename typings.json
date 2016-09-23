@@ -2,7 +2,9 @@
   "name": "lazy-boy-js",
   "dependencies": {},
   "globalDependencies": {
+    "chai": "registry:dt/chai#3.4.0+20160601211834",
     "cradle": "registry:dt/cradle#0.0.0+20160316155526",
-    "node": "registry:dt/node#6.0.0+20160602155235"
+    "mocha": "registry:dt/mocha#2.2.5+20160720003353",
+    "node": "registry:dt/node#6.0.0+20160921192128"
   }
 }

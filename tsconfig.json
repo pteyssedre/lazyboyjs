@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "module": "CommonJS",
-    "target": "es5",
+    "target": "es6",
     "noImplicitAny" : true,
     "sourceMap": false,
     "outDir": "dist"
@@ -13,6 +13,7 @@
     "node_modules"
   ],
   "files": [
+    "test/TestAsync.ts",
     "src/lazyboyjs.ts",
     "typings/index.d.ts"
   ]

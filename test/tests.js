@@ -1,6 +1,6 @@
 var chai = require("chai");
 var expect = chai.expect;
-var lazyboyjs = require("../dist/lazyboyjs").lazyboyjs;
+var lazyboyjs = require("../dist/src/lazyboyjs").lazyboyjs;
 var LazyFormatLogger = require("lazy-format-logger");
 
 describe('LazyBoy', function () {
@@ -8,16 +8,16 @@ describe('LazyBoy', function () {
     var dropDbsAfterTest = true;
     describe('Default error', function () {
         it('Should log a line', function () {
-            var except = new lazyboyjs.LazyBoyError("Test logging");
+            new lazyboyjs.LazyBoyError("Test logging");
         });
         it('Should NOT log a line', function () {
-            lazyboyjs.LazyBoy.setLevel(LazyFormatLogger.LogLevel.INFO);
-            var except = new lazyboyjs.LazyBoyError("Test logging");
+            lazyboyjs.setLevel(LazyFormatLogger.LogLevel.INFO);
+            new lazyboyjs.LazyBoyError("Test logging");
         });
     });
     describe('Default options', function () {
         it('If no options are passed in then default values should be applied', function () {
-            lazyboyjs.LazyBoy.setLevel(LazyFormatLogger.LogLevel.VERBOSE);
+            lazyboyjs.setLevel(LazyFormatLogger.LogLevel.VERBOSE);
             var l = new lazyboyjs.LazyBoy();
             expect(l.options.host).equal("127.0.0.1");
             expect(l.options.port).equal(5984);
@@ -112,7 +112,7 @@ describe('LazyBoy', function () {
                 reduce: "_count()"
             };
             var LazyBoy = new lazyboyjs.LazyBoy().Databases('views').Connect();
-            LazyBoy.AddView('views', 'myNewView', myNewView, function(error, success){
+            LazyBoy.AddView('views', 'myNewView', myNewView, function (error, success) {
                 expect(error).to.equal(null);
                 expect(success).to.equal(true);
                 done();
