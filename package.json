@@ -1,9 +1,9 @@
 {
   "name": "lazyboyjs",
   "version": "0.0.2",
-  "description": "Wrapper to access and manipulate CouchDB server and entries easily",
-  "main": "dist/lazyboyjs.js",
-  "typings": "dist/lazyboyjs",
+  "description": "Wrapper to access and manipulate CouchDB 1.X server and entries easily",
+  "main": "dist/src/lazyboyjs.js",
+  "typings": "dist/src/lazyboyjs",
   "scripts": {
     "prepublish": "tsc",
     "test": "make test"
@@ -33,7 +33,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "cradle": "^0.7.1",
-    "lazy-format-logger": "0.0.1"
+    "lazy-format-logger": "^0.0.2"
   },
   "devDependencies": {
     "chai": "^3.5.0",
