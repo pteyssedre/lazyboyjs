@@ -4,7 +4,7 @@
     "declaration": true,
     "module": "CommonJS",
     "target": "es6",
-    "noImplicitAny" : true,
+    "noImplicitAny" : false,
     "sourceMap": false,
     "outDir": "dist"
   },

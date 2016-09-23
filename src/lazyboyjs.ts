@@ -794,6 +794,10 @@ export module lazyboyjs {
         private _dbNames: string[] = [];
         private _dbs: { [id: string]: Cradle.Database } = {};
 
+        hasConnection = (): boolean => {
+            return this._connection ? true : false;
+        };
+
         constructor(options?: LazyOptions) {
             if (options && options.logLevel) {
                 Log = new LazyFormatLogger.Logger(options.logLevel);

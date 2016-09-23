@@ -11,7 +11,7 @@ describe('LazyBoy', function () {
             new lazyboyjs.LazyBoyError("Test logging");
         });
         it('Should NOT log a line', function () {
-            lazyboyjs.setLevel(LazyFormatLogger.LogLevel.INFO);
+            lazyboyjs.setLevel(LazyFormatLogger.LogLevel.CRITICAL);
             new lazyboyjs.LazyBoyError("Test logging");
         });
     });
