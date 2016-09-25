@@ -71,7 +71,8 @@ describe('LazyBoyAsync', ()=> {
                                     if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
                                         emit(doc.instance.name, doc._id);
                                     }
-                                }
+                                },
+                                reduce: "_count()"
                             },
                             "fromNameToIdReduce": {
                                 map: function (doc) {
@@ -124,7 +125,7 @@ describe('LazyBoyAsync', ()=> {
         it("Should return the id of an instance in the database 'lazy_views'", async()=> {
             var l = new lazyboyjs.LazyBoyAsync().Databases('views');
             await l.ConnectAsync();
-            let report = await l.GetViewResultAsync('views', 'fromNameToId', {key: 'TheInstance'});
+            let report = await l.GetViewResultAsync('views', 'fromNameToId', {key: 'TheInstance',reduce:false});
             expect(report.error).to.equal(null);
             expect(report.result.length > 0).to.equal(true);
             expect(report.result[0].id).to.equal(testInstanceId);

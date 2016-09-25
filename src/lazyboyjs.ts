@@ -880,6 +880,7 @@ export module lazyboyjs {
                     }
                     Log.i("LazyBoy", "InitializeDatabaseAsync", "initializing database " + name);
                     let db = this._getAndConnectDb(name);
+                    r.name = db.name;
                     db.exists(async(error: any, exist: boolean)=> {
                         if (error) {
                             Log.e("LazyBoy", "InitializeDatabaseAsync", "db.exists", error);
@@ -950,7 +951,6 @@ export module lazyboyjs {
                         r.entry = entry;
                         return resolve(r);
                     });
-                    return resolve(r);
                 } catch (exception) {
                     return reject(exception)
                 }
@@ -1069,9 +1069,10 @@ export module lazyboyjs {
                 try {
                     let db = this._getAndConnectDb(dbName);
                     db.view("views/" + viewName, params, (error: any, result: any): void=> {
+                        r.error = error;
+                        r.result = result;
                         if (error) {
                             Log.e("LazyBoy", "GetViewResult", error);
-                            throw error;
                         }
                         return resolve(r);
                     });
