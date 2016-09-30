@@ -199,7 +199,7 @@ export module lazyboyjs {
         static View_Error_Deleted = "deleted";
     }
 
-    export class LazyBoy {
+    export class LazyBase {
 
         /**
          *
@@ -222,18 +222,145 @@ export module lazyboyjs {
             return entry;
         };
 
-
         public host: string;
         public port: number;
+        public options: LazyOptions;
+
+        protected _connection: Cradle.Connection;
+        protected _options: Cradle.Options;
+        protected _dbNames: string[] = [];
+        protected _dbs: { [id: string]: Cradle.Database } = {};
+
+
+        constructor(options?: LazyOptions) {
+            if (options && options.logLevel) {
+                Log = new LazyFormatLogger.Logger(options.logLevel);
+            }
+            this.options = options;
+            this._initParams();
+        }
+
+        /**
+         * Initialization of parameter and {options} object.
+         * It will create default {options} object.
+         * By default autoConnect it force to ensure use quickly.
+         * @private
+         */
+        private _initParams = (): void => {
+            if (!this.options) {
+                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
+            }
+            if (this.options.autoConnect !== false) {
+                this.options.autoConnect = true;
+            }
+            if (!this.host) {
+                if (!this.options.host) {
+                    this.options.host = "127.0.0.1";
+                }
+                this.host = this.options.host;
+            }
+            if (!this.port || isNaN(this.port)) {
+                if (!this.options.port || isNaN(this.options.port)) {
+                    this.options.port = 5984;
+                }
+                this.port = this.options.port;
+            }
+            if (!this.options.prefix) {
+                this.options.prefix = "lazy"
+            } else {
+                let p = this.options.prefix.lastIndexOf("_");
+                let l = this.options.prefix.length;
+                if (p === l - 1) {
+                    this.options.prefix = this.options.prefix.substr(0, p);
+                }
+            }
+            // maybe adding https support ...
+            this._options = {cache: true, raw: false, forceSave: true};
+        };
+
+        /**
+         *
+         * @param name {string}
+         * @returns {boolean}
+         * @private
+         */
+        protected _injectDatabaseName = (name: string): boolean => {
+            try {
+                let n = name;
+                if (this.options.prefix) {
+                    n = this.options.prefix + "_" + n;
+                }
+                let t = this._dbNames.push(n);
+                return t > -1;
+            } catch (exception) {
+                Log.i("LazyBase", "_injectDatabaseName", exception);
+            }
+            return false;
+        };
+
+        /**
+         *
+         * @returns {string}
+         * @private
+         */
+        protected _newGUID = (): string => {
+            let s4 = (): string=> {
+                return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
+            };
+            return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4()
+        };
+
+        /**
+         *
+         * @param dbName
+         * @returns {Object}
+         * @private
+         */
+        protected _getDb = (dbName: string): Cradle.Database => {
+            if (dbName == null || dbName.length == 0) {
+                return null;
+            }
+            dbName = this._formatDbName(dbName);
+            return this._dbs[dbName];
+        };
+
+        /**
+         *
+         * @param dbName
+         * @returns {string}
+         * @private
+         */
+        protected _formatDbName = function (dbName: string) {
+            if (dbName.indexOf(this.options.prefix + "_") == -1) {
+                dbName = this.options.prefix + "_" + dbName;
+            }
+            return dbName;
+        };
+
+        /**
+         *
+         * @param dbName {string}
+         * @param db {object}
+         * @returns {boolean}
+         * @private
+         */
+        protected _putDb = (dbName: string, db: Cradle.Database): boolean => {
+            if (dbName == null || dbName.length == 0) {
+                return false;
+            }
+            dbName = this._formatDbName(dbName);
+            this._dbs[dbName] = db;
+            return true;
+        };
+
+    }
+
+    export class LazyBoy extends LazyBase {
+
+
         public hasConnection = (): boolean => {
             return this._connection ? true : false;
         };
-        public options: LazyOptions;
-
-        private _connection: Cradle.Connection;
-        private _options: Cradle.Options;
-        private _dbNames: string[] = [];
-        private _dbs: { [id: string]: Cradle.Database } = {};
         private _cOaC: DbInitializeAllCallback = (error: any, result: ReportInitialization)=> {
             Log.d("LazyBoy", "_cOaC", error, result);
         };
@@ -243,11 +370,10 @@ export module lazyboyjs {
         };
 
         constructor(options?: LazyOptions) {
-            if (options && options.logLevel) {
-                Log = new LazyFormatLogger.Logger(options.logLevel);
+            super(options);
+            if (this.options) {
+                this.options.autoConnect ? this.Connect() : false;
             }
-            this.options = options;
-            this._initParams();
         }
 
         /**
@@ -544,80 +670,6 @@ export module lazyboyjs {
         }
 
         /**
-         *
-         * @param name {string}
-         * @returns {boolean}
-         * @private
-         */
-        private _injectDatabaseName = (name: string): boolean => {
-            try {
-                let n = name;
-                if (this.options.prefix) {
-                    n = this.options.prefix + "_" + n;
-                }
-                let t = this._dbNames.push(n);
-                return t > -1;
-            } catch (exception) {
-                Log.i("LazyBoy", "_injectDatabaseName", exception);
-            }
-            return false;
-        };
-
-        /**
-         *
-         * @returns {string}
-         * @private
-         */
-        private _newGUID = (): string => {
-            let s4 = (): string=> {
-                return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
-            };
-            return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4()
-        };
-
-        /**
-         *
-         * @param dbName
-         * @returns {Object}
-         * @private
-         */
-        private _getDb = (dbName: string): Cradle.Database => {
-            if (dbName == null || dbName.length == 0) {
-                return null;
-            }
-            dbName = this._formatDbName(dbName);
-            return this._dbs[dbName];
-        };
-
-        /**
-         *
-         * @param dbName
-         * @returns {string}
-         * @private
-         */
-        private _formatDbName = function (dbName: string) {
-            if (dbName.indexOf(this.options.prefix + "_") == -1) {
-                dbName = this.options.prefix + "_" + dbName;
-            }
-            return dbName;
-        };
-
-        /**
-         *
-         * @param dbName {string}
-         * @param db {object}
-         * @returns {boolean}
-         * @private
-         */
-        private _putDb = (dbName: string, db: Cradle.Database): boolean => {
-            if (dbName == null || dbName.length == 0) {
-                return false;
-            }
-            dbName = this._formatDbName(dbName);
-            this._dbs[dbName] = db;
-            return true;
-        };
-        /**
          * In order to create or update some views for a DB, a validation must be done using the "version" property
          * of the {@link LazyDesignViews#version}
          * @param db {object} database object.
@@ -664,6 +716,7 @@ export module lazyboyjs {
 
             });
         };
+
         /**
          * Shorter to save and validate the {views} of a specific database.
          * @param db {object}
@@ -685,6 +738,7 @@ export module lazyboyjs {
                 return callback(null, true);
             }
         };
+
         /**
          * Callback use when {InitializeAllDatabases} is called. It will
          * continue the creation of all databases contain in {_dbNames}.
@@ -717,93 +771,19 @@ export module lazyboyjs {
             this.InitializeDatabase(n[0], this._continueCreate);
         };
 
-        /**
-         * Initialization of parameter and {options} object.
-         * It will create default {options} object.
-         * By default autoConnect it force to ensure use quickly.
-         * @private
-         */
-        private _initParams = (): void => {
-            this._cOaC = function () {
-            };
-            if (!this.options) {
-                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
-            }
-            if (this.options.autoConnect !== false) {
-                this.options.autoConnect = true;
-            }
-            if (!this.host) {
-                if (!this.options.host) {
-                    this.options.host = "127.0.0.1";
-                }
-                this.host = this.options.host;
-            }
-            if (!this.port || isNaN(this.port)) {
-                if (!this.options.port || isNaN(this.options.port)) {
-                    this.options.port = 5984;
-                }
-                this.port = this.options.port;
-            }
-            if (!this.options.prefix) {
-                this.options.prefix = "lazy"
-            } else {
-                let p = this.options.prefix.lastIndexOf("_");
-                let l = this.options.prefix.length;
-                if (p === l - 1) {
-                    this.options.prefix = this.options.prefix.substr(0, p);
-                }
-            }
-            // maybe adding https support ...
-            this._options = {cache: true, raw: false, forceSave: true};
-            if (this.options) {
-                this.options.autoConnect ? this.Connect() : false;
-            }
-        };
     }
 
-    export class LazyBoyAsync {
-
-        /**
-         *
-         * @param instance {Object}
-         * @param type {string}
-         * @returns {LazyInstance}
-         */
-        public static NewEntry: (instance: any, type?: string) => LazyInstance = (instance: any, type?: string)=> {
-            let entry = {
-                created: new Date().getTime(),
-                type: '',
-                modified: new Date().getTime(),
-                isDeleted: false,
-                instance: {}
-            };
-            if (type) {
-                entry.type = type;
-            }
-            entry.instance = instance;
-            return entry;
-        };
-
-
-        public host: string;
-        public port: number;
-        public options: LazyOptions;
-
-        private _connection: Cradle.Connection;
-        private _options: Cradle.Options;
-        private _dbNames: string[] = [];
-        private _dbs: { [id: string]: Cradle.Database } = {};
+    export class LazyBoyAsync extends LazyBase {
 
         hasConnection = (): boolean => {
             return this._connection ? true : false;
         };
 
         constructor(options?: LazyOptions) {
-            if (options && options.logLevel) {
-                Log = new LazyFormatLogger.Logger(options.logLevel);
+            super(options);
+            if (this.options) {
+                this.options.autoConnect ? this.ConnectAsync() : false;
             }
-            this.options = options;
-            this._initParams();
         }
 
         /**
@@ -814,10 +794,10 @@ export module lazyboyjs {
             return new Promise<boolean>((resolve, reject)=> {
                 let result: boolean = false;
                 try {
-                    Log.d("LazyBoy", "Connect", "initiating connection using Cradle");
+                    Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection using Cradle");
                     this._connection = new Cradle.Connection(this.host, this.port, this._options);
                     for (var name of this._dbNames) {
-                        Log.d("LazyBoy", "Connect", "initiating connection to db " + name);
+                        Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection to db " + name);
                         this._dbs[name] = this._connection.database(name);
                     }
                     result = true;
@@ -878,22 +858,22 @@ export module lazyboyjs {
                     if (!this._connection) {
                         return resolve(r);
                     }
-                    Log.i("LazyBoy", "InitializeDatabaseAsync", "initializing database " + name);
+                    Log.i("LazyBoyAsync", "InitializeDatabaseAsync", "initializing database " + name);
                     let db = this._getAndConnectDb(name);
                     r.name = db.name;
                     db.exists(async(error: any, exist: boolean)=> {
                         if (error) {
-                            Log.e("LazyBoy", "InitializeDatabaseAsync", "db.exists", error);
+                            Log.e("LazyBoyAsync", "InitializeDatabaseAsync", "db.exists", error);
                             r.status = DbCreateStatus.Error;
                             return resolve(r);
                         }
                         if (exist) {
-                            Log.i("LazyBoy", "InitializeDatabaseAsync", "db exist " + name + "");
+                            Log.i("LazyBoyAsync", "InitializeDatabaseAsync", "db exist " + name + "");
                             let report = await this._validateDesignViewsAsync(db);
                             r.status = report.error ? DbCreateStatus.Error : report.status;
                             return resolve(r);
                         } else {
-                            Log.i("LazyBoy", "InitializeDatabaseAsync", "creating " + name + "");
+                            Log.i("LazyBoyAsync", "InitializeDatabaseAsync", "creating " + name + "");
                             db.create(async(error: any)=> {
                                 if (error) {
                                     Log.i(error);
@@ -1184,77 +1164,11 @@ export module lazyboyjs {
 
         /**
          *
-         * @param name {string}
-         * @returns {boolean}
-         * @private
-         */
-        private _injectDatabaseName = (name: string): boolean => {
-            try {
-                let n = name;
-                if (this.options.prefix) {
-                    n = this.options.prefix + "_" + n;
-                }
-                let t = this._dbNames.push(n);
-                return t > -1;
-            } catch (exception) {
-                Log.i("LazyBoy", "_injectDatabaseName", exception);
-            }
-            return false;
-        };
-        /**
-         *
-         * @returns {string}
-         * @private
-         */
-        private _newGUID = (): string => {
-            let s4 = (): string=> {
-                return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
-            };
-            return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4()
-        };
-
-        /**
-         *
          * @param dbName
-         * @returns {Object}
+         * @param viewName
+         * @param view
          * @private
          */
-        private _getDb = (dbName: string): Cradle.Database => {
-            if (dbName == null || dbName.length == 0) {
-                return null;
-            }
-            dbName = this._formatDbName(dbName);
-            return this._dbs[dbName];
-        };
-        /**
-         *
-         * @param dbName
-         * @returns {string}
-         * @private
-         */
-        private _formatDbName = function (dbName: string) {
-            if (dbName.indexOf(this.options.prefix + "_") == -1) {
-                dbName = this.options.prefix + "_" + dbName;
-            }
-            return dbName;
-        };
-        /**
-         *
-         * @param dbName {string}
-         * @param db {object}
-         * @returns {boolean}
-         * @private
-         */
-        private _putDb = (dbName: string, db: Cradle.Database): boolean => {
-            if (dbName == null || dbName.length == 0) {
-                return false;
-            }
-            dbName = this._formatDbName(dbName);
-            this._dbs[dbName] = db;
-            return true;
-        };
-
-
         private _updateView(dbName: string, viewName: string, view: LazyView): void {
             let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
             if (!designView) {
@@ -1309,14 +1223,14 @@ export module lazyboyjs {
                                 switch (error.reason) {
                                     case LazyConst.View_Error_Missing:
                                     case LazyConst.View_Error_Deleted:
-                                        Log.d("LazyBoy", "_validateDesignViewsAsync", "Missing view");
+                                        Log.d("LazyBoyAsync", "_validateDesignViewsAsync", "Missing view");
                                         let report = await this._saveViewsAsync(db, designView);
                                         r.error = report.error;
                                         r.status = report.result ? DbCreateStatus.Created : DbCreateStatus.Created_Without_Views;
                                         r.status = r.error ? DbCreateStatus.Error : r.status;
                                         return resolve(r);
                                     default:
-                                        Log.e("LazyBoy", "_validateDesignViewsAsync", error);
+                                        Log.e("LazyBoyAsync", "_validateDesignViewsAsync", error);
                                         r.error = error;
                                         r.status = DbCreateStatus.Error;
                                         return resolve(r);
@@ -1365,7 +1279,7 @@ export module lazyboyjs {
                     if (views) {
                         db.save(LazyConst.DesignViews, views, (error: any, result: any): void => {
                             if (error) {
-                                Log.e("LazyBoy", "_saveViews", error);
+                                Log.e("LazyBoyAsync", "_saveViews", error);
                                 r.error = error;
                                 r.result = false;
                                 return resolve(r);
@@ -1382,46 +1296,5 @@ export module lazyboyjs {
                 }
             });
         }
-
-        /**
-         * Initialization of parameter and {options} object.
-         * It will create default {options} object.
-         * By default autoConnect it force to ensure use quickly.
-         * @private
-         */
-        private _initParams = (): void => {
-            if (!this.options) {
-                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
-            }
-            if (this.options.autoConnect !== false) {
-                this.options.autoConnect = true;
-            }
-            if (!this.host) {
-                if (!this.options.host) {
-                    this.options.host = "127.0.0.1";
-                }
-                this.host = this.options.host;
-            }
-            if (!this.port || isNaN(this.port)) {
-                if (!this.options.port || isNaN(this.options.port)) {
-                    this.options.port = 5984;
-                }
-                this.port = this.options.port;
-            }
-            if (!this.options.prefix) {
-                this.options.prefix = "lazy"
-            } else {
-                let p = this.options.prefix.lastIndexOf("_");
-                let l = this.options.prefix.length;
-                if (p === l - 1) {
-                    this.options.prefix = this.options.prefix.substr(0, p);
-                }
-            }
-            // maybe adding https support ...
-            this._options = {cache: true, raw: false, forceSave: true};
-            if (this.options) {
-                this.options.autoConnect ? this.ConnectAsync() : false;
-            }
-        };
     }
 }
