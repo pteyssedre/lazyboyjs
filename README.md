@@ -1,3 +1,3 @@
 # lazyboyjs
 
-Simple wrapper on top of cradle to read insert and delete couchdb elements
+Simple wrapper on top of cradle to read insert and delete CouchDB elements
