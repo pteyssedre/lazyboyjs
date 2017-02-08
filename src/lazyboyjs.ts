@@ -207,7 +207,7 @@ export module lazyboyjs {
          * @param type {string}
          * @returns {LazyInstance}
          */
-        public static NewEntry: (instance: any, type?: string) => LazyInstance = (instance: any, type?: string)=> {
+        public static NewEntry: (instance: any, type?: string) => LazyInstance = (instance: any, type?: string) => {
             let entry = {
                 created: new Date().getTime(),
                 type: '',
@@ -229,7 +229,7 @@ export module lazyboyjs {
         protected _connection: Cradle.Connection;
         protected _options: Cradle.Options;
         protected _dbNames: string[] = [];
-        protected _dbs: { [id: string]: Cradle.Database } = {};
+        protected _dbs: {[id: string]: Cradle.Database} = {};
 
 
         constructor(options?: LazyOptions) {
@@ -304,7 +304,7 @@ export module lazyboyjs {
          * @private
          */
         protected _newGUID = (): string => {
-            let s4 = (): string=> {
+            let s4 = (): string => {
                 return Math.floor((1 + Math.random()) * 65536).toString(16).substring(1);
             };
             return s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4()
@@ -361,7 +361,7 @@ export module lazyboyjs {
         public hasConnection = (): boolean => {
             return this._connection ? true : false;
         };
-        private _cOaC: DbInitializeAllCallback = (error: any, result: ReportInitialization)=> {
+        private _cOaC: DbInitializeAllCallback = (error: any, result: ReportInitialization) => {
             Log.d("LazyBoy", "_cOaC", error, result);
         };
         private _report: ReportInitialization = {
@@ -470,7 +470,7 @@ export module lazyboyjs {
             entry.modified = t;
             let db = this._getDb(dbName);
             if (db) {
-                db.save(id, entry, (error: any, result: any): void=> {
+                db.save(id, entry, (error: any, result: any): void => {
                     if (error) {
                         Log.e("LazyBoy", "AddEntry", "db.save", error);
                         return callback(error, InstanceCreateStatus.Error, null);
@@ -514,7 +514,7 @@ export module lazyboyjs {
          * @param callback {function(error: Error, delete:boolean)}
          * @param trueDelete {boolean} flag to force permanent delete
          */
-        public DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean)=>void, trueDelete: boolean) {
+        public DeleteEntry(dbName: string, entry: LazyInstance, callback: (error: any, deleted: boolean) => void, trueDelete: boolean) {
             if (trueDelete) {
                 let db = this._getDb(dbName);
                 if (db) {
@@ -548,7 +548,7 @@ export module lazyboyjs {
          * @param entry {LazyInstance} instance to update.
          * @param callback {function(error: Error, updated: boolean)}
          */
-        public UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance)=> void) {
+        public UpdateEntry(dbName: string, entry: LazyInstance, callback: (error: any, updated: boolean, data: LazyInstance) => void) {
             let db = this._getDb(dbName);
             if (db) {
                 db.save(entry._id, entry._rev, entry, (error: any, result: any): void => {
@@ -570,10 +570,10 @@ export module lazyboyjs {
          * @param params {lazyboyjs.LazyViewParams} actual value to search inside the view.
          * @param callback {}
          */
-        public GetViewResult(dbName: string, viewName: string, params: LazyViewParams, callback: (error: any, result: any)=>void): void {
+        public GetViewResult(dbName: string, viewName: string, params: LazyViewParams, callback: (error: any, result: any) => void): void {
             var db = this._getDb(dbName);
             if (db) {
-                db.view("views/" + viewName, params, (error: any, result: any): void=> {
+                db.view("views/" + viewName, params, (error: any, result: any): void => {
                     if (error) {
                         Log.e("LazyBoy", "GetViewResult", error);
                         throw error;
@@ -594,7 +594,7 @@ export module lazyboyjs {
          * @param view {LazyView}
          * @param callback {function(error: Error, result: boolean)}
          */
-        public AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean)=> void): void {
+        public AddView(dbName: string, viewName: string, view: LazyView, callback: (error: any, result: boolean) => void): void {
             let db = this._getDb(dbName);
             if (!db) {
                 return callback(new LazyBoyError("database doesn't exist or not managed"), false);
@@ -618,7 +618,7 @@ export module lazyboyjs {
          * Shorter to destroy all managed databases.
          * @param callback {function(error: Error, report: object}
          */
-        public DropDatabases(callback: (error: any, report: any)=>void): void {
+        public DropDatabases(callback: (error: any, report: any) => void): void {
             let report = {
                 dropped: ["name"],
                 fail: ["name"]
@@ -791,7 +791,7 @@ export module lazyboyjs {
          * @return {Promise<boolean>}
          */
         async ConnectAsync(): Promise<boolean> {
-            return new Promise<boolean>((resolve, reject)=> {
+            return new Promise<boolean>((resolve, reject) => {
                 let result: boolean = false;
                 try {
                     Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection using Cradle");
@@ -825,7 +825,7 @@ export module lazyboyjs {
          * @return {Promise<ReportInitialization>}
          */
         async InitializeAllDatabasesAsync(): Promise<ReportInitialization> {
-            return new Promise<ReportInitialization>(async(resolve, reject)=> {
+            return new Promise<ReportInitialization>(async(resolve, reject) => {
                 let gReport: ReportInitialization = {success: [], fail: []};
                 let success = DbCreateStatus.Created | DbCreateStatus.Created_Without_Views | DbCreateStatus.UpToDate;
                 let fail = DbCreateStatus.Error | DbCreateStatus.Not_Connected;
@@ -852,7 +852,7 @@ export module lazyboyjs {
          * @return {Promise<{status: DbCreateStatus, name: string}>}
          */
         async InitializeDatabaseAsync(name: string): Promise<{status: DbCreateStatus, name: string}> {
-            return new Promise<{status: DbCreateStatus, name: string}>((resolve, reject)=> {
+            return new Promise<{status: DbCreateStatus, name: string}>((resolve, reject) => {
                 let r: {status: DbCreateStatus, name: string} = {status: DbCreateStatus.Not_Connected, name: name};
                 try {
                     if (!this._connection) {
@@ -861,7 +861,7 @@ export module lazyboyjs {
                     Log.i("LazyBoyAsync", "InitializeDatabaseAsync", "initializing database " + name);
                     let db = this._getAndConnectDb(name);
                     r.name = db.name;
-                    db.exists(async(error: any, exist: boolean)=> {
+                    db.exists(async(error: any, exist: boolean) => {
                         if (error) {
                             Log.e("LazyBoyAsync", "InitializeDatabaseAsync", "db.exists", error);
                             r.status = DbCreateStatus.Error;
@@ -874,7 +874,7 @@ export module lazyboyjs {
                             return resolve(r);
                         } else {
                             Log.i("LazyBoyAsync", "InitializeDatabaseAsync", "creating " + name + "");
-                            db.create(async(error: any)=> {
+                            db.create(async(error: any) => {
                                 if (error) {
                                     Log.i(error);
                                     r.status = DbCreateStatus.Error;
@@ -899,7 +899,7 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}>}
          */
         async AddEntryAsync(dbName: string, data: {type?: string, data: Object}): Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}> {
-            return new Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}>((resolve, reject)=> {
+            return new Promise<{error: Error, result: InstanceCreateStatus, entry?: LazyInstance}>((resolve, reject) => {
                 let r: {error: Error, result: InstanceCreateStatus, entry?: LazyInstance} = {
                     error: null,
                     result: InstanceCreateStatus.Error
@@ -914,7 +914,7 @@ export module lazyboyjs {
                     entry.created = t;
                     entry.modified = t;
                     let db = this._getAndConnectDb(dbName);
-                    db.save(id, entry, (error: any, result: any): void=> {
+                    db.save(id, entry, (error: any, result: any): void => {
                         if (error) {
                             Log.e("LazyBoyAsync", "AddEntryAsync", "db.save", error);
                             r.error = error;
@@ -944,7 +944,7 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, data: LazyInstance}>}
          */
         async GetEntryAsync(dbName: string, entryId: string): Promise<{error: Error, data: LazyInstance}> {
-            return new Promise<{error: Error, data: LazyInstance}>((resolve, reject)=> {
+            return new Promise<{error: Error, data: LazyInstance}>((resolve, reject) => {
                 let r: {error: Error, data: LazyInstance} = {error: null, data: null};
                 try {
                     let db = this._getAndConnectDb(dbName);
@@ -971,7 +971,7 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, deleted: boolean}>}
          */
         async DeleteEntryAsync(dbName: string, entry: LazyInstance, trueDelete: boolean): Promise<{error: Error, deleted: boolean}> {
-            return new Promise<{error: Error, deleted: boolean}>(async(resolve, reject)=> {
+            return new Promise<{error: Error, deleted: boolean}>(async(resolve, reject) => {
                 let r: {error: Error, deleted: boolean} = {error: null, deleted: false};
                 try {
                     if (trueDelete) {
@@ -1013,7 +1013,7 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, updated: boolean, data: LazyInstance}>}
          */
         async UpdateEntryAsync(dbName: string, entry: LazyInstance): Promise<{error: Error, updated: boolean, data: LazyInstance}> {
-            return new Promise<{error: Error, updated: boolean, data: LazyInstance}>((resolve, reject)=> {
+            return new Promise<{error: Error, updated: boolean, data: LazyInstance}>((resolve, reject) => {
                 let r: {error: Error, updated: boolean, data: LazyInstance} = {error: null, updated: false, data: null};
                 try {
                     let db = this._getAndConnectDb(dbName);
@@ -1044,11 +1044,11 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, result: any}>}
          */
         async GetViewResultAsync(dbName: string, viewName: string, params: LazyViewParams): Promise<{error: Error, result: any}> {
-            return new Promise<{error: Error, result: any}>((resolve, reject)=> {
+            return new Promise<{error: Error, result: any}>((resolve, reject) => {
                 let r: {error: Error, result: any} = {error: null, result: null};
                 try {
                     let db = this._getAndConnectDb(dbName);
-                    db.view("views/" + viewName, params, (error: any, result: any): void=> {
+                    db.view("views/" + viewName, params, (error: any, result: any): void => {
                         r.error = error;
                         r.result = result;
                         if (error) {
@@ -1072,11 +1072,12 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, result: boolean}>}
          */
         async AddViewAsync(dbName: string, viewName: string, view: LazyView): Promise<{error: Error, result: boolean}> {
-            return new Promise<{error: Error, result: boolean}>(async(resolve, reject)=> {
+            return new Promise<{error: Error, result: boolean}>(async(resolve, reject) => {
                 let r: {error: Error, result: boolean} = {error: null, result: false};
                 try {
-                    this._updateView(dbName, viewName, view);
                     let db = this._getAndConnectDb(dbName);
+                    await this._getDesignViewsAsync(db);
+                    this._updateView(dbName, viewName, view);
                     let report = await this._validateDesignViewsAsync(db);
                     r.error = report.error;
                     r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
@@ -1095,7 +1096,7 @@ export module lazyboyjs {
          * @constructor
          */
         async AddViewsAsync(dbName: string, views: {name: string, view: LazyView}[]): Promise<{error: Error, result: boolean}> {
-            return new Promise<{error: Error, result: boolean}>(async(resolve, reject)=> {
+            return new Promise<{error: Error, result: boolean}>(async(resolve, reject) => {
                 let r: {error: Error, result: boolean} = {error: null, result: false};
                 try {
                     for (let view of views) {
@@ -1117,7 +1118,7 @@ export module lazyboyjs {
          * @return {Promise<{success: string[], fail: string[]}>}
          */
         async DropAllDatabasesAsync(): Promise<{success: string[], fail: string[]}> {
-            return new Promise<{success: string[], fail: string[]}>(async(resolve, reject)=> {
+            return new Promise<{success: string[], fail: string[]}>(async(resolve, reject) => {
                 let r: {success: string[], fail: string[]} = {success: [], fail: []};
                 try {
                     for (let name of this._dbNames) {
@@ -1141,11 +1142,11 @@ export module lazyboyjs {
          * @return {Promise<{error: Error, status: DbDropStatus}>}
          */
         async DropDatabaseAsync(dbName: string): Promise<{error: Error, status: DbDropStatus}> {
-            return new Promise<{error: Error, status: DbDropStatus}>((resolve, reject)=> {
+            return new Promise<{error: Error, status: DbDropStatus}>((resolve, reject) => {
                 let r: {error: Error, status: DbDropStatus} = {error: null, status: DbDropStatus.Error};
                 try {
                     let db = this._getAndConnectDb(dbName);
-                    db.destroy((error)=> {
+                    db.destroy((error) => {
                         if (error) {
                             r.error = error;
                             r.status = DbDropStatus.Error;
@@ -1205,7 +1206,7 @@ export module lazyboyjs {
          * @private
          */
         private async _validateDesignViewsAsync(db: Cradle.Database): Promise<{error: Error, status: DbCreateStatus}> {
-            return new Promise<{error: Error, status: DbCreateStatus}>((resolve, reject)=> {
+            return new Promise<{error: Error, status: DbCreateStatus}>((resolve, reject) => {
                 let r: {error: Error, status: DbCreateStatus} = {error: null, status: DbCreateStatus.Error};
                 try {
                     if (!this.options || !this.options.views) {
@@ -1217,7 +1218,7 @@ export module lazyboyjs {
                         r.status = DbCreateStatus.Created_Without_Views;
                         return resolve(r);
                     }
-                    db.get(LazyConst.DesignViews, async(error: any, document: any)=> {
+                    db.get(LazyConst.DesignViews, async(error: any, document: any) => {
                         if (error) {
                             if (error.reason) {
                                 switch (error.reason) {
@@ -1265,6 +1266,24 @@ export module lazyboyjs {
             });
         }
 
+        async _getDesignViewsAsync(db: Cradle.Database): Promise<{error: Error, result: any}> {
+            return new Promise<{error: Error, result: any}>((resolve, reject) => {
+                let r: {error: Error, result: any};
+                try {
+                    db.get(LazyConst.DesignViews, (error: any, document: any) => {
+                        if(error){
+                            Log.e("LazyBoyAsync", "_getDesignViewsAsync", error);
+                            r.error = error;
+                        }
+                        this.options.views[db.name] = document;
+                        return resolve(r);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
         /**
          * Shorter to save and validate the {views} of a specific database.
          * @param db {object}
@@ -1273,18 +1292,19 @@ export module lazyboyjs {
          * @private
          */
         private async _saveViewsAsync(db: Cradle.Database, views: LazyDesignViews): Promise<{error: Error, result: boolean}> {
-            return new Promise<{error: Error, result: boolean}>((resolve, reject)=> {
+            return new Promise<{error: Error, result: boolean}>((resolve, reject) => {
                 let r: {error: Error, result: boolean} = {error: null, result: false};
                 try {
                     if (views) {
                         db.save(LazyConst.DesignViews, views, (error: any, result: any): void => {
                             if (error) {
-                                Log.e("LazyBoyAsync", "_saveViews", error);
+                                Log.e("LazyBoyAsync", "_saveViewsAsync", error);
                                 r.error = error;
                                 r.result = false;
                                 return resolve(r);
                             }
-                            Log.d("LazyBoy", "_saveViewsAsync", result);
+                            views["_rev"] = result._rev;
+                            Log.d("LazyBoyAsync", "_saveViewsAsync", result);
                             r.result = true;
                             return resolve(r);
                         });

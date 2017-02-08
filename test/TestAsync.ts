@@ -18,7 +18,7 @@ describe('LazyBoyAsync', ()=> {
     describe('Default options', ()=> {
         it('If no options are passed in then default values should be applied', ()=> {
             lazyboyjs.setLevel(LazyFormatLogger.LogLevel.VERBOSE);
-            var l = new lazyboyjs.LazyBoyAsync();
+            let l = new lazyboyjs.LazyBoyAsync();
             expect(l.options.host).equal("127.0.0.1");
             expect(l.options.port).equal(5984);
             expect(l.options.prefix).equal("lazy");
@@ -28,19 +28,19 @@ describe('LazyBoyAsync', ()=> {
     });
     describe('AutoConnect false', ()=> {
         it('Should not connect if autoConnect is set to false', ()=> {
-            var l = new lazyboyjs.LazyBoyAsync({autoConnect: false});
+            let l = new lazyboyjs.LazyBoyAsync({autoConnect: false});
             expect(l.hasConnection()).equal(false);
         });
     });
     describe('AutoConnect true', ()=> {
         it('Should try connect if no configuration is passed in', ()=> {
-            var l = new lazyboyjs.LazyBoyAsync();
+            let l = new lazyboyjs.LazyBoyAsync();
             expect(l.hasConnection()).to.equal(true);
         });
     });
     describe('Create database', ()=> {
         it("Should create a database with the name 'lazy_test'", async() => {
-            var l = new lazyboyjs.LazyBoyAsync();
+            let l = new lazyboyjs.LazyBoyAsync();
             let report = await l.InitializeDatabaseAsync('test');
             expect(report.name).to.equal('lazy_test');
             expect(report.status).to.equal(lazyboyjs.DbCreateStatus.Created_Without_Views);
@@ -49,7 +49,7 @@ describe('LazyBoyAsync', ()=> {
     describe('Create multiple databases', ()=> {
         it("Should create databases with the name " +
             "'lazy_test_multiple1','lazy_test_multiple2','lazy_test_multiple3'", async()=> {
-            var l = new lazyboyjs.LazyBoyAsync().Databases('test_multiple1', 'test_multiple2', 'test_multiple3');
+            let l = new lazyboyjs.LazyBoyAsync().Databases('test_multiple1', 'test_multiple2', 'test_multiple3');
             let report = await l.InitializeAllDatabasesAsync();
             expect(report.success.length).to.equal(3);
         });
@@ -86,7 +86,7 @@ describe('LazyBoyAsync', ()=> {
                     }
                 }
             };
-            var LazyBoy = new lazyboyjs.LazyBoyAsync(LazyOptions).Databases('views');
+            let LazyBoy = new lazyboyjs.LazyBoyAsync(LazyOptions).Databases('views');
             let report = await LazyBoy.InitializeAllDatabasesAsync();
             expect(report.success[0].name).to.equal("lazy_views");
             expect(report.success[0].status).to.equal(lazyboyjs.DbCreateStatus.Created);
@@ -95,7 +95,7 @@ describe('LazyBoyAsync', ()=> {
             function emit(...and: any[]) {
             }
 
-            var myNewView: lazyboyjs.LazyView = {
+            let myNewView: lazyboyjs.LazyView = {
                 map: function (doc) {
                     if (doc.hasOwnProperty("instance") && doc.instance.hasOwnProperty("name")) {
                         emit(doc.instance.name, doc._id);
@@ -103,8 +103,8 @@ describe('LazyBoyAsync', ()=> {
                 },
                 reduce: "_count()"
             };
-            var LazyBoy = new lazyboyjs.LazyBoyAsync().Databases('views');
-            LazyBoy.ConnectAsync();
+            let LazyBoy = new lazyboyjs.LazyBoyAsync().Databases('views');
+            await LazyBoy.ConnectAsync();
             let report = await LazyBoy.AddViewAsync('views', 'myNewView', myNewView);
             expect(report.error).to.equal(null);
             expect(report.result).to.equal(true);
@@ -112,7 +112,7 @@ describe('LazyBoyAsync', ()=> {
     });
     describe('Create a instance', ()=> {
         it("Should add an instance in the database named 'lazy_views'", async()=> {
-            var l = new lazyboyjs.LazyBoyAsync().Databases('views');
+            let l = new lazyboyjs.LazyBoyAsync().Databases('views');
             await l.ConnectAsync();
             let report = await l.AddEntryAsync('views', {data: {name: 'TheInstance', otherValue: 'test'}});
             expect(report.error).to.equal(null);
@@ -121,9 +121,28 @@ describe('LazyBoyAsync', ()=> {
             testInstanceId = report.entry._id;
         });
     });
+    describe('Create views', ()=>{
+        it('Should create a view in db', async()=>{
+            let l = new lazyboyjs.LazyBoyAsync().Databases('views');
+            await l.ConnectAsync();
+            let report = await l.AddViewAsync("views", "byTitle",
+                {map:"function(doc){ if(doc.instance['Title']){ emit(doc.instance.Title, doc.instance);} }",
+                    reduce:"_count"});
+            expect(report.result).to.equal(true);
+            report = await l.AddViewAsync("views", "byTitle2",
+                {map:"function(doc){ if(doc.instance['Title']){ emit(doc.instance.Title, doc.instance);} }",
+                    reduce:"_count"});
+            expect(report.result).to.equal(true);
+            report = await l.AddViewAsync("views", "byTitle3",
+                {map:"function(doc){ if(doc.instance['Title']){ emit(doc.instance.Title, doc.instance);} }",
+                    reduce:"_count"});
+            expect(report.result).to.equal(true);
+
+        });
+    });
     describe('Get result of view', ()=> {
         it("Should return the id of an instance in the database 'lazy_views'", async()=> {
-            var l = new lazyboyjs.LazyBoyAsync().Databases('views');
+            let l = new lazyboyjs.LazyBoyAsync().Databases('views');
             await l.ConnectAsync();
             let report = await l.GetViewResultAsync('views', 'fromNameToId', {key: 'TheInstance',reduce:false});
             expect(report.error).to.equal(null);
@@ -131,7 +150,7 @@ describe('LazyBoyAsync', ()=> {
             expect(report.result[0].id).to.equal(testInstanceId);
         });
         it("Should return the id of an instance in the database 'lazy_views' not reduce", async()=> {
-            var l = new lazyboyjs.LazyBoyAsync().Databases('views');
+            let l = new lazyboyjs.LazyBoyAsync().Databases('views');
             await l.ConnectAsync();
             let report = await l.GetViewResultAsync('views', 'fromNameToIdReduce', {
                 key: 'TheInstance',
@@ -144,7 +163,7 @@ describe('LazyBoyAsync', ()=> {
     });
     describe('Get entry from database', ()=> {
         it('Should return a complete entry', async() => {
-            var l = new lazyboyjs.LazyBoyAsync().Databases('views');
+            let l = new lazyboyjs.LazyBoyAsync().Databases('views');
             await l.ConnectAsync();
             let report = await l.GetEntryAsync('views', testInstanceId);
 
@@ -157,7 +176,7 @@ describe('LazyBoyAsync', ()=> {
     if (dropDbsAfterTest) {
         describe('Drop one database', ()=> {
             it("Should drop the database named 'lazy_test'", async()=> {
-                var l = new lazyboyjs.LazyBoyAsync().Databases('test');
+                let l = new lazyboyjs.LazyBoyAsync().Databases('test');
                 await l.ConnectAsync();
                 let report = await l.DropDatabaseAsync('test');
                 expect(report.error).to.equal(null);
@@ -166,7 +185,7 @@ describe('LazyBoyAsync', ()=> {
         });
         describe('Drop multiple databases', ()=> {
             it("Should drop all the databases of this test", async()=> {
-                var l = new lazyboyjs.LazyBoyAsync().Databases('views', 'test_multiple1', 'test_multiple2', 'test_multiple3');
+                let l = new lazyboyjs.LazyBoyAsync().Databases('views', 'test_multiple1', 'test_multiple2', 'test_multiple3');
                 await l.ConnectAsync();
                 let report = await l.DropAllDatabasesAsync();
                 expect(report.success.length).to.equal(4);
