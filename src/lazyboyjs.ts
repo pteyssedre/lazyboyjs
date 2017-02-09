@@ -1076,8 +1076,31 @@ export module lazyboyjs {
                 let r: {error: Error, result: boolean} = {error: null, result: false};
                 try {
                     let db = this._getAndConnectDb(dbName);
-                    await this._getDesignViewsAsync(db);
-                    this._updateView(dbName, viewName, view);
+                    let d = await this._getDesignViewsAsync(db);
+                    let design = d.result;
+                    let mem = this.options.views[db.name];
+                    if (!mem && !design || mem && !design) {
+                        this._updateView(dbName, viewName, view);
+
+                    } else if (!mem && design) { //get from db or delete ?
+                        this.options.views[db.name] = design;
+                        mem = this.options.views[db.name];
+
+                    }
+                    if (mem && design) {
+                        mem["_rev"] = design["_rev"];
+                        if (!mem.views[viewName]) {
+                            this._updateView(dbName, viewName, view);
+                        } else if (mem.views[viewName]) {
+                            let a = mem.views[viewName].map.toString();
+                            let c = view.map.toString();
+                            if (a !== c) {
+                                this._updateView(dbName, viewName, view);
+                            }
+
+                        }
+                    }
+
                     let report = await this._validateDesignViewsAsync(db);
                     r.error = report.error;
                     r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
@@ -1171,6 +1194,7 @@ export module lazyboyjs {
          * @private
          */
         private _updateView(dbName: string, viewName: string, view: LazyView): void {
+            Log.d("LazyBoyAsync", "_updateView", dbName, viewName);
             let designView: LazyDesignViews = this.options.views[this._formatDbName(dbName)];
             if (!designView) {
                 designView = {version: 1, type: 'javascript', views: {}};
@@ -1242,6 +1266,7 @@ export module lazyboyjs {
                                 return resolve(r);
                             }
                         } else if (document) {
+                            Log.d("LazyBoyAsync", "_validateDesignViewsAsync", document.version, designView.version);
                             if (document.version < designView.version) {
                                 let report = await this._saveViewsAsync(db, designView);
                                 r.error = report.error;
@@ -1268,14 +1293,14 @@ export module lazyboyjs {
 
         async _getDesignViewsAsync(db: Cradle.Database): Promise<{error: Error, result: any}> {
             return new Promise<{error: Error, result: any}>((resolve, reject) => {
-                let r: {error: Error, result: any};
+                let r: {error: Error, result: any} = {error: null, result: null};
                 try {
                     db.get(LazyConst.DesignViews, (error: any, document: any) => {
-                        if(error){
+                        if (error) {
                             Log.e("LazyBoyAsync", "_getDesignViewsAsync", error);
-                            r.error = error;
                         }
-                        this.options.views[db.name] = document;
+                        r.result = document;
+                        r.error = error;
                         return resolve(r);
                     });
                 } catch (exception) {
