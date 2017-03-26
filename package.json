@@ -1,6 +1,6 @@
 {
   "name": "lazyboyjs",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Wrapper to access and manipulate CouchDB 1.X server and entries easily",
   "main": "dist/src/lazyboyjs.js",
   "typings": "dist/src/lazyboyjs",
@@ -33,7 +33,8 @@
   "license": "MIT",
   "dependencies": {
     "cradle": "^0.7.1",
-    "lazy-format-logger": "0.0.5"
+    "lazy-format-logger": "0.0.5",
+    "mime": "^1.3.4"
   },
   "devDependencies": {
     "chai": "^3.5.0",
