@@ -38,6 +38,15 @@ export module lazyboyjs {
         isDeleted: boolean;
         type: string;
         instance: any;
+        _attachments?: {[id: string]: CouchAttachment}
+    }
+
+    export interface CouchAttachment {
+        content_type: string;
+        revpos: number;
+        digest: string;
+        length: number;
+        stub: boolean;
     }
 
     /**
@@ -1220,13 +1229,10 @@ export module lazyboyjs {
             });
         }
 
-        async AddFileAsAttachment(dbName: string, entryId: string, rev: string, name: string, path: string): Promise<{error: any, status: any}> {
+        async AddFileAsAttachmentAsync(dbName: string, entryId: string, rev: string, name: string, path: string): Promise<{error: any, status: any}> {
             return new Promise<{error: any, status: any}>((resolve) => {
                 let r: {error: any, status: any} = {error: null, status: 0};
-                let db = this._getDb(dbName);
-                if (!db) {
-                    db = this._getAndConnectDb(dbName);
-                }
+                let db = this._getAndConnectDb(dbName);
                 let attachmentData = {
                     name: name,
                     'Content-Type': mime.lookup(path)
@@ -1241,6 +1247,36 @@ export module lazyboyjs {
                     resolve(r);
                 });
                 readStream.pipe(writeStream);
+            });
+        }
+
+        async GetAttachmentAsync(dbName: string, entryId: string, attachmentName: string): Promise<any> {
+            return new Promise<any>(async(resolve, reject) => {
+                try {
+                    let db = this._getAndConnectDb(dbName);
+                    db.getAttachment(entryId, attachmentName, (error, data) => {
+                        if (error) {
+                            Log.e("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", error);
+                        }
+                        return resolve(data);
+                    });
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        async GetAttachmentInfoAsync(dbName: string, entryId: string, attachmentName: string): Promise<CouchAttachment> {
+            return new Promise<CouchAttachment>(async(resolve, reject) => {
+                try {
+                    let get = await this.GetEntryAsync(dbName, entryId);
+                    if (!get.data._attachments || !get.data._attachments[attachmentName]) {
+                        return resolve(null);
+                    }
+                    return resolve(get.data._attachments[attachmentName]);
+                } catch (exception) {
+                    return reject(exception)
+                }
             });
         }
 

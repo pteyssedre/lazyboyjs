@@ -2,6 +2,9 @@ import chai = require("chai");
 import LazyFormatLogger = require("lazy-format-logger");
 import {lazyboyjs} from "../src/lazyboyjs";
 import InstanceCreateStatus = lazyboyjs.InstanceCreateStatus;
+import fs = require('fs');
+import path = require('path');
+import mime = require("mime");
 let expect = chai.expect;
 
 declare function emit(k: any, v: any);
@@ -251,22 +254,49 @@ describe('LazyBoyAsync', () => {
             expect(zombie.error.error).to.equal("not_found");
             expect(zombie.data).to.equal(null);
         });
-
-        it('Should push an attachment', async() => {
+        describe('Attachments',()=>{
 
             let dbName = 'attachment_test';
-            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
-            await l.InitializeAllDatabasesAsync();
-            await l.ConnectAsync();
+            let insert;
+            it('Should push an attachment', async() => {
 
-            let insert = await l.AddEntryAsync(dbName, {data: {name: "document"}, type: "document"});
+                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+                await l.InitializeAllDatabasesAsync();
+                await l.ConnectAsync();
 
-            expect(insert.error).to.equal(null);
-            expect(insert.result).to.equal(InstanceCreateStatus.Created);
+                insert = await l.AddEntryAsync(dbName, {data: {name: "document"}, type: "document"});
 
-            let doc = await l.AddFileAsAttachment(dbName, insert.entry._id, insert.entry._rev, "vortex", "./test/vortex");
-            expect(doc.error).to.equal(null);
-            expect(doc.status.ok).to.equal(true);
+                expect(insert.error).to.equal(null);
+                expect(insert.result).to.equal(InstanceCreateStatus.Created);
+
+                let doc = await l.AddFileAsAttachmentAsync(dbName, insert.entry._id, insert.entry._rev, "vortex", "./test/vortex");
+                expect(doc.error).to.equal(null);
+                expect(doc.status.ok).to.equal(true);
+            });
+            it('Should retrieve attachment info', async()=>{
+
+                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+                await l.InitializeAllDatabasesAsync();
+                await l.ConnectAsync();
+
+                let info = await l.GetAttachmentInfoAsync(dbName, insert.entry._id, 'vortex');
+                expect(info).to.not.equal(null);
+                expect(info.content_type).equal(mime.lookup('./test/vortex'));
+                let stats = fs.statSync('./test/vortex');
+                expect(info.length).to.equal(stats.size);
+            });
+            it('Should retrieve an attachment', async() => {
+
+                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+                await l.InitializeAllDatabasesAsync();
+                await l.ConnectAsync();
+
+                let downloadPath = path.join(__dirname, './vortex_copy');
+                let writeStream = fs.createWriteStream(downloadPath);
+                let readStream = await l.GetAttachmentAsync(dbName, insert.entry._id, "vortex");
+                readStream.pipe(writeStream);
+
+            });
         });
     });
 
