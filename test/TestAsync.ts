@@ -264,7 +264,7 @@ describe('LazyBoyAsync', () => {
             expect(insert.error).to.equal(null);
             expect(insert.result).to.equal(InstanceCreateStatus.Created);
 
-            let doc = await l.AddFileAsAttachment(dbName, insert.entry._id, insert.entry._rev,"vortex", "./test/vortex");
+            let doc = await l.AddFileAsAttachment(dbName, insert.entry._id, insert.entry._rev, "vortex", "./test/vortex");
             expect(doc.error).to.equal(null);
             expect(doc.status.ok).to.equal(true);
         });
