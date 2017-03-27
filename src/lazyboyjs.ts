@@ -5,6 +5,8 @@ import mime = require('mime');
 
 export module lazyboyjs {
 
+    import WritableStream = NodeJS.WritableStream;
+    import ReadableStream = NodeJS.ReadableStream;
     let Log: LazyFormatLogger.Logger = new LazyFormatLogger.Logger();
 
     export function setLevel(level: LazyFormatLogger.LogLevel): void {
@@ -1254,12 +1256,13 @@ export module lazyboyjs {
             return new Promise<any>(async(resolve, reject) => {
                 try {
                     let db = this._getAndConnectDb(dbName);
-                    db.getAttachment(entryId, attachmentName, (error, data) => {
+                    let data = db.getAttachment(entryId, attachmentName, (error) => {
                         if (error) {
                             Log.e("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", error);
                         }
-                        return resolve(data);
+                        Log.d("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", "download completed");
                     });
+                    return resolve(data);
                 } catch (exception) {
                     return reject(exception)
                 }
