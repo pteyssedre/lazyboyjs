@@ -830,6 +830,7 @@ export module lazyboyjs {
                     result = true;
                     return resolve(result);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "ConnectAsync", exception);
                     return reject(exception);
                 }
             });
@@ -869,6 +870,7 @@ export module lazyboyjs {
                         }
                     }
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "InitializeAllDatabasesAsync", exception);
                     return reject(exception);
                 }
             });
@@ -914,6 +916,7 @@ export module lazyboyjs {
                         }
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "InitializeDatabaseAsync", exception);
                     return reject(exception)
                 }
             });
@@ -959,6 +962,7 @@ export module lazyboyjs {
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "AddEntryAsync", exception);
                     return reject(exception)
                 }
             });
@@ -985,6 +989,7 @@ export module lazyboyjs {
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "GetEntryAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1028,6 +1033,7 @@ export module lazyboyjs {
                         }
                     }
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "DeleteEntryAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1058,6 +1064,7 @@ export module lazyboyjs {
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "UpdateEntryAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1079,11 +1086,12 @@ export module lazyboyjs {
                         r.error = error;
                         r.result = result;
                         if (error) {
-                            Log.e("LazyBoy", "GetViewResult", error);
+                            Log.e("LazyBoyAsync", "GetViewResultAsync", error);
                         }
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "GetViewResultAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1133,6 +1141,7 @@ export module lazyboyjs {
                     r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
                     return resolve(r);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "AddViewAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1158,6 +1167,7 @@ export module lazyboyjs {
                     r.result = (report.status == DbCreateStatus.Created || report.status == DbCreateStatus.UpToDate);
                     return resolve(r);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "AddViewsAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1181,6 +1191,7 @@ export module lazyboyjs {
                     }
                     return resolve(r);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "DropAllDatabasesAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1208,6 +1219,7 @@ export module lazyboyjs {
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "DropDatabaseAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1264,6 +1276,7 @@ export module lazyboyjs {
                     });
                     return resolve(data);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "GetAttachmentAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1278,6 +1291,7 @@ export module lazyboyjs {
                     }
                     return resolve(get.data._attachments[attachmentName]);
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "GetAttachmentInfoAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1383,6 +1397,7 @@ export module lazyboyjs {
 
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "_validateDesignViewsAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1401,6 +1416,7 @@ export module lazyboyjs {
                         return resolve(r);
                     });
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "_validateDesignViewsAsync", exception);
                     return reject(exception)
                 }
             });
@@ -1434,6 +1450,7 @@ export module lazyboyjs {
                         return resolve(r);
                     }
                 } catch (exception) {
+                    Log.c("LazyBoyAsync", "_saveViewsAsync", exception);
                     return reject(exception)
                 }
             });
