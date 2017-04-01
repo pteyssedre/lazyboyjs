@@ -493,6 +493,7 @@ export declare module lazyboyjs {
             error: any;
             status: any;
         }>;
+        GetAttachmentStreamAsync(dbName: string, entryId: string, attachmentName: string): Promise<any>;
         GetAttachmentAsync(dbName: string, entryId: string, attachmentName: string): Promise<any>;
         GetAttachmentInfoAsync(dbName: string, entryId: string, attachmentName: string): Promise<CouchAttachment>;
         /**

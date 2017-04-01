@@ -209,6 +209,100 @@ describe('LazyBoyAsync', () => {
 
         });
     });
+    describe('Attachments', () => {
+
+        let dbName = 'attachment_test';
+        let insert;
+        it('Should push an attachment', async() => {
+
+            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+            await l.InitializeAllDatabasesAsync();
+            await l.ConnectAsync();
+
+            insert = await l.AddEntryAsync(dbName, {data: {name: "document"}, type: "document"});
+
+            expect(insert.error).to.equal(null);
+            expect(insert.result).to.equal(InstanceCreateStatus.Created);
+
+            let doc = await l.AddFileAsAttachmentAsync(dbName, insert.entry._id, insert.entry._rev, "vortex", "./test/vortex.jpg");
+            expect(doc.error).to.equal(null);
+            expect(doc.status.ok).to.equal(true);
+        });
+        it('Should retrieve attachment info', async() => {
+
+            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+            await l.InitializeAllDatabasesAsync();
+            await l.ConnectAsync();
+
+            let info = await l.GetAttachmentInfoAsync(dbName, insert.entry._id, 'vortex');
+            expect(info).to.not.equal(null);
+            expect(info.content_type).equal(mime.lookup('./test/vortex.jpg'));
+            let stats = fs.statSync('./test/vortex.jpg');
+            expect(info.length).to.equal(stats.size);
+        });
+
+        async function WriteFileAsync(read: ReadableStream, write: WritableStream): Promise<boolean> {
+            return new Promise<boolean>((resolve, reject) => {
+                try {
+                    write.on('error', () => {
+                        return reject("error write");
+                    });
+                    write.on('end', () => {
+                        return resolve(true);
+                    });
+                    read.on('error', () => {
+                        return reject("error read");
+                    });
+                    read.on('end', () => {
+                        return resolve(true);
+                    });
+                    read.pipe(write);
+                } catch (exception) {
+                    return reject(exception)
+                }
+            });
+        }
+
+        it('Should retrieve an attachment by stream', async() => {
+
+            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+            await l.InitializeAllDatabasesAsync();
+            await l.ConnectAsync();
+
+            let downloadPath = path.join(__dirname, './vortex_copy.jpg');
+            let sourcePath = path.join(__dirname, './vortex.jpg');
+            let writeStream = fs.createWriteStream(downloadPath);
+            let readStream = await l.GetAttachmentStreamAsync(dbName, insert.entry._id, "vortex");
+            await WriteFileAsync(readStream, writeStream);
+
+            let b1 = fs.readFileSync(downloadPath);
+            let b2 = fs.readFileSync(sourcePath);
+
+            expect(b1.toString() === b2.toString()).to.equals(true);
+        });
+
+        it('Should retrieve an attachment buffered', async() => {
+
+            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+            await l.InitializeAllDatabasesAsync();
+            await l.ConnectAsync();
+
+            let downloadPath = path.join(__dirname, './vortex_copy_2.jpg');
+            let sourcePath = path.join(__dirname, './vortex.jpg');
+            // let writeStream = fs.createWriteStream(downloadPath);
+            let data = await l.GetAttachmentAsync(dbName, insert.entry._id, "vortex");
+
+            let buff = new Buffer(data.body.buffer, 'utf-8');
+            fs.write(fs.openSync(downloadPath, 'w'), buff,0,buff.length, 0, (error,written)=>{
+
+                let b1 = fs.readFileSync(downloadPath);
+                let b2 = fs.readFileSync(sourcePath);
+
+                expect(b1.toString() === b2.toString()).to.equals(true);
+
+            });
+        });
+    });
     describe("Delete Data", () => {
         it("Should flag data as deleted", async() => {
 
@@ -232,7 +326,6 @@ describe('LazyBoyAsync', () => {
             expect(zombie.data._id).to.equal(insert.entry._id);
             expect(zombie.data.isDeleted).to.equal(true);
         });
-
         it("Should delete data permanently", async() => {
 
             let l = new lazyboyjs.LazyBoyAsync().Databases('delete_test');
@@ -256,78 +349,6 @@ describe('LazyBoyAsync', () => {
             expect(zombie.error.reason).to.equal("deleted");
             expect(zombie.error.error).to.equal("not_found");
             expect(zombie.data).to.equal(null);
-        });
-        describe('Attachments', () => {
-
-            let dbName = 'attachment_test';
-            let insert;
-            it('Should push an attachment', async() => {
-
-                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
-                await l.InitializeAllDatabasesAsync();
-                await l.ConnectAsync();
-
-                insert = await l.AddEntryAsync(dbName, {data: {name: "document"}, type: "document"});
-
-                expect(insert.error).to.equal(null);
-                expect(insert.result).to.equal(InstanceCreateStatus.Created);
-
-                let doc = await l.AddFileAsAttachmentAsync(dbName, insert.entry._id, insert.entry._rev, "vortex", "./test/vortex.jpg");
-                expect(doc.error).to.equal(null);
-                expect(doc.status.ok).to.equal(true);
-            });
-            it('Should retrieve attachment info', async() => {
-
-                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
-                await l.InitializeAllDatabasesAsync();
-                await l.ConnectAsync();
-
-                let info = await l.GetAttachmentInfoAsync(dbName, insert.entry._id, 'vortex');
-                expect(info).to.not.equal(null);
-                expect(info.content_type).equal(mime.lookup('./test/vortex.jpg'));
-                let stats = fs.statSync('./test/vortex.jpg');
-                expect(info.length).to.equal(stats.size);
-            });
-
-            async function WriteFileAsync(read: ReadableStream, write: WritableStream): Promise<boolean> {
-                return new Promise<boolean>((resolve, reject) => {
-                    try {
-                        write.on('error', () => {
-                            return reject("error write");
-                        });
-                        write.on('end', () => {
-                            return resolve(true);
-                        });
-                        read.on('error', () => {
-                            return reject("error read");
-                        });
-                        read.on('end', () => {
-                            return resolve(true);
-                        });
-                        read.pipe(write);
-                    } catch (exception) {
-                        return reject(exception)
-                    }
-                });
-            }
-
-            it('Should retrieve an attachment', async() => {
-
-                let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
-                await l.InitializeAllDatabasesAsync();
-                await l.ConnectAsync();
-
-                let downloadPath = path.join(__dirname, './vortex_copy.jpg');
-                let sourcePath = path.join(__dirname, './vortex.jpg');
-                let writeStream = fs.createWriteStream(downloadPath);
-                let readStream = await l.GetAttachmentAsync(dbName, insert.entry._id, "vortex");
-                await WriteFileAsync(readStream, writeStream);
-
-                let b1 = fs.readFileSync(downloadPath);
-                let b2 = fs.readFileSync(sourcePath);
-
-                expect(b1.toString() === b2.toString()).to.equals(true);
-            });
         });
     });
 

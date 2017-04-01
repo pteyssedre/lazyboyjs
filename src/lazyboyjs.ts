@@ -1264,16 +1264,13 @@ export module lazyboyjs {
             });
         }
 
-        async GetAttachmentAsync(dbName: string, entryId: string, attachmentName: string): Promise<any> {
+        async GetAttachmentStreamAsync(dbName: string, entryId: string, attachmentName: string): Promise<any> {
             return new Promise<any>(async(resolve, reject) => {
                 try {
+                    Log.d("LazyBoyAsync", "GetAttachmentAsync", entryId, attachmentName);
                     let db = this._getAndConnectDb(dbName);
-                    let data = db.getAttachment(entryId, attachmentName, (error) => {
-                        if (error) {
-                            Log.e("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", error);
-                        }
-                        Log.d("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", "download completed");
-                    });
+                    let data = db.getAttachment(entryId, attachmentName, undefined);
+                    Log.d("LazyBoyAsync", "GetAttachmentAsync", data);
                     return resolve(data);
                 } catch (exception) {
                     Log.c("LazyBoyAsync", "GetAttachmentAsync", exception);
@@ -1281,6 +1278,27 @@ export module lazyboyjs {
                 }
             });
         }
+
+        async GetAttachmentAsync(dbName: string, entryId: string, attachmentName: string): Promise<any> {
+            return new Promise<any>(async(resolve, reject) => {
+                try {
+                    Log.d("LazyBoyAsync", "GetAttachmentAsync", entryId, attachmentName);
+                    let db = this._getAndConnectDb(dbName);
+                    db.getAttachment(entryId, attachmentName, (error, reply) => {
+                        if (error) {
+                            Log.c("LazyBoyAsync", "GetAttachmentAsync", "getAttachment", error);
+                            return resolve(null);
+                        }
+                        Log.d("LazyBoyAsync", "GetAttachmentAsync", reply.body.buffer);
+                        return resolve(reply);
+                    });
+                } catch (exception) {
+                    Log.c("LazyBoyAsync", "GetAttachmentAsync", exception);
+                    return reject(exception)
+                }
+            });
+        }
+
 
         async GetAttachmentInfoAsync(dbName: string, entryId: string, attachmentName: string): Promise<CouchAttachment> {
             return new Promise<CouchAttachment>(async(resolve, reject) => {
