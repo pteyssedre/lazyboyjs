@@ -81,6 +81,9 @@ export module lazyboyjs {
         views?: {[id: string]: LazyDesignViews};
         autoConnect?: boolean;
         logLevel?: LazyFormatLogger.LogLevel;
+        cache: boolean;
+        raw: boolean;
+        forceSave: boolean;
     }
 
     export interface LazyViewParams {
@@ -276,7 +279,16 @@ export module lazyboyjs {
          */
         private _initParams = (): void => {
             if (!this.options) {
-                this.options = {host: "127.0.0.1", port: 5984, prefix: "lazy", autoConnect: true, views: {}};
+                this.options = {
+                    host: "127.0.0.1",
+                    port: 5984,
+                    prefix: "lazy",
+                    autoConnect: true,
+                    views: {},
+                    cache: true,
+                    raw: false,
+                    forceSave: true
+                };
             }
             if (this.options.autoConnect !== false) {
                 this.options.autoConnect = true;
@@ -303,7 +315,7 @@ export module lazyboyjs {
                 }
             }
             // maybe adding https support ...
-            this._options = {cache: true, raw: false, forceSave: true};
+            this._options = {cache: this.options.cache, raw: this.options.raw, forceSave: this.options.forceSave};
         };
 
         /**

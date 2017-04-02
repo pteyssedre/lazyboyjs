@@ -29,7 +29,7 @@ describe('LazyBoy', function () {
     });
     describe('AutoConnect false', function () {
         it('Should not connect if autoConnect is set to false', function () {
-            let l = new lazyboyjs_1.lazyboyjs.LazyBoy({ autoConnect: false });
+            let l = new lazyboyjs_1.lazyboyjs.LazyBoy({ autoConnect: false, cache: true, raw: false, forceSave: true });
             expect(l.hasConnection()).equal(false);
         });
     });
@@ -88,6 +88,9 @@ describe('LazyBoy', function () {
             };
             let LazyOptions = {
                 autoConnect: true,
+                cache: true,
+                forceSave: true,
+                raw: false,
                 views: {
                     "lazy_views": LazyDesignViews
                 }

@@ -41,7 +41,7 @@ describe('LazyBoyAsync', () => {
     });
     describe('AutoConnect false', () => {
         it('Should not connect if autoConnect is set to false', () => {
-            let l = new lazyboyjs_1.lazyboyjs.LazyBoyAsync({ autoConnect: false });
+            let l = new lazyboyjs_1.lazyboyjs.LazyBoyAsync({ autoConnect: false, cache: true, raw: false, forceSave: true });
             expect(l.hasConnection()).equal(false);
         });
     });
@@ -71,6 +71,9 @@ describe('LazyBoyAsync', () => {
         it("Should create a database with name 'lazy_views' and add Views", () => __awaiter(this, void 0, void 0, function* () {
             let LazyOptions = {
                 autoConnect: true,
+                cache: true,
+                forceSave: true,
+                raw: false,
                 views: {
                     "lazy_views": {
                         version: 1,
@@ -274,10 +277,37 @@ describe('LazyBoyAsync', () => {
             let data = yield l.GetAttachmentAsync(dbName, insert.entry._id, "vortex");
             let buff = new Buffer(data.body.buffer, 'utf-8');
             fs.write(fs.openSync(downloadPath, 'w'), buff, 0, buff.length, 0, (error, written) => {
+                expect(error).to.equals(null);
+                expect(written).to.equals(buff.length);
                 let b1 = fs.readFileSync(downloadPath);
                 let b2 = fs.readFileSync(sourcePath);
                 expect(b1.toString() === b2.toString()).to.equals(true);
             });
+        }));
+        it('Should update the attachment', () => __awaiter(this, void 0, void 0, function* () {
+            let l = new lazyboyjs_1.lazyboyjs.LazyBoyAsync().Databases(dbName);
+            yield l.InitializeAllDatabasesAsync();
+            yield l.ConnectAsync();
+            let downloadPath = path.join(__dirname, './vortex_copy_2.jpg');
+            let downloadPathAndroid = path.join(__dirname, './android_copy.jpg');
+            let sourcePathVortex = path.join(__dirname, './vortex.jpg');
+            let sourcePathAndroid = path.join(__dirname, './android.jpg');
+            let writeStream = fs.createWriteStream(downloadPathAndroid);
+            let data = yield l.GetAttachmentStreamAsync(dbName, insert.entry._id, "vortex");
+            yield WriteFileAsync(data, writeStream);
+            let b1 = fs.readFileSync(downloadPath);
+            let b2 = fs.readFileSync(sourcePathVortex);
+            expect(b1.toString() === b2.toString()).to.equals(true);
+            let test = yield l.GetEntryAsync(dbName, insert.entry._id);
+            let doc = yield l.AddFileAsAttachmentAsync(dbName, insert.entry._id, test.data._rev, "vortex", "./test/android.jpg");
+            expect(doc.error).to.equal(null);
+            expect(doc.status.ok).to.equal(true);
+            let writeStreamAndroid = fs.createWriteStream(downloadPathAndroid);
+            let readStream = yield l.GetAttachmentStreamAsync(dbName, insert.entry._id, "vortex");
+            yield WriteFileAsync(readStream, writeStreamAndroid);
+            let b3 = fs.readFileSync(downloadPathAndroid);
+            let b4 = fs.readFileSync(sourcePathAndroid);
+            expect(b3.toString() === b4.toString()).to.equals(true);
         }));
     });
     describe("Delete Data", () => {

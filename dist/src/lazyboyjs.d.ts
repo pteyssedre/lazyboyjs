@@ -58,6 +58,9 @@ export declare module lazyboyjs {
         };
         autoConnect?: boolean;
         logLevel?: LazyFormatLogger.LogLevel;
+        cache: boolean;
+        raw: boolean;
+        forceSave: boolean;
     }
     interface LazyViewParams {
         key?: string;
