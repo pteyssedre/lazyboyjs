@@ -2,7 +2,8 @@ language: node_js
 node_js:
   - "7"
 before_script:
-  - npm install -g typescript typings
+  - npm install -g typings
+  - npm install -g typescript
 script:
   - typings install
   - tsc
