@@ -5,7 +5,6 @@
   "main": "dist/src/lazyboyjs.js",
   "typings": "dist/src/lazyboyjs",
   "scripts": {
-    "prepublish": "tsc",
     "test": "make test"
   },
   "keywords": [
