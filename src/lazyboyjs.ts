@@ -1268,7 +1268,7 @@ export module lazyboyjs {
                     'Content-Type': mime.lookup(path)
                 };
                 let readStream = fs.createReadStream(path);
-                let writeStream = db.saveAttachment({id: entryId, rev: rev}, attachmentData, (err, reply) => {
+                let writeStream:any = db.saveAttachment({id: entryId, rev: rev}, attachmentData, (err, reply) => {
                     r.error = err;
                     if (err) {
                         Log.e("LazyBoyAsync", "AddAttachment", "saveAttachment", err);
