@@ -830,7 +830,7 @@ export module lazyboyjs {
          * @return {Promise<boolean>}
          */
         async ConnectAsync(): Promise<boolean> {
-            return new Promise<boolean>((resolve, reject) => {
+            return new Promise<boolean>(async(resolve, reject) => {
                 let result: boolean = false;
                 try {
                     Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection using Cradle");
@@ -838,6 +838,10 @@ export module lazyboyjs {
                     for (let name of this._dbNames) {
                         Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection to db " + name);
                         this._dbs[name] = this._connection.database(name);
+                        let r = await this._getDesignViewsAsync(this._dbs[name]);
+                        if (r.result) {
+                            this.options.views[this._dbs[name].name] = r.result;
+                        }
                     }
                     result = true;
                     return resolve(result);

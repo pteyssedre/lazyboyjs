@@ -664,7 +664,7 @@ var lazyboyjs;
          */
         ConnectAsync() {
             return __awaiter(this, void 0, void 0, function* () {
-                return new Promise((resolve, reject) => {
+                return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     let result = false;
                     try {
                         Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection using Cradle");
@@ -672,6 +672,10 @@ var lazyboyjs;
                         for (let name of this._dbNames) {
                             Log.d("LazyBoyAsync", "ConnectAsync", "initiating connection to db " + name);
                             this._dbs[name] = this._connection.database(name);
+                            let r = yield this._getDesignViewsAsync(this._dbs[name]);
+                            if (r.result) {
+                                this.options.views[this._dbs[name].name] = r.result;
+                            }
                         }
                         result = true;
                         return resolve(result);
@@ -680,7 +684,7 @@ var lazyboyjs;
                         Log.c("LazyBoyAsync", "ConnectAsync", exception);
                         return reject(exception);
                     }
-                });
+                }));
             });
         }
         /**
