@@ -5,7 +5,7 @@
   "main": "dist/src/lazyboyjs.js",
   "typings": "dist/src/lazyboyjs",
   "scripts": {
-    "test": "make test"
+    "test": "node_modules/.bin/istanbul cover _mocha ./dist/test --reporter ./dist/spec"
   },
   "keywords": [
     "couchdb",
