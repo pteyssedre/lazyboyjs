@@ -2,7 +2,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "declaration": true,
-    "module": "CommonJS",
+    "module": "commonjs",
     "target": "es6",
     "noImplicitAny" : false,
     "sourceMap": false,
@@ -13,7 +13,6 @@
     "node_modules"
   ],
   "files": [
-    "test/TestAsync.ts",
     "test/Test.ts",
     "src/lazyboyjs.ts",
     "typings/index.d.ts"
