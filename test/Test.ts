@@ -460,23 +460,24 @@ describe('LazyBoyAsync', () => {
             });
         }
 
-        it('Should retrieve an attachment by stream', async() => {
+        // it('Should retrieve an attachment by stream', async() => {
+        //
+        //     let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
+        //     await l.InitializeAllDatabasesAsync();
+        //     await l.ConnectAsync();
+        //
+        //     let downloadPath = path.join(__dirname, './vortex_copy.jpg');
+        //     let sourcePath = path.join(__dirname, '../../test/vortex.jpg');
+        //     let writeStream = fs.createWriteStream(downloadPath);
+        //     let readStream = await l.GetAttachmentStreamAsync(dbName, insert.entry._id, "vortex");
+        //     await WriteFileAsync(readStream, writeStream);
+        //
+        //     let b1 = fs.readFileSync(downloadPath);
+        //     let b2 = fs.readFileSync(sourcePath);
+        //
+        //     expect(b1.toString() === b2.toString()).to.equals(true);
+        // });
 
-            let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
-            await l.InitializeAllDatabasesAsync();
-            await l.ConnectAsync();
-
-            let downloadPath = path.join(__dirname, './vortex_copy.jpg');
-            let sourcePath = path.join(__dirname, '../../test/vortex.jpg');
-            let writeStream = fs.createWriteStream(downloadPath);
-            let readStream = await l.GetAttachmentStreamAsync(dbName, insert.entry._id, "vortex");
-            await WriteFileAsync(readStream, writeStream);
-
-            let b1 = fs.readFileSync(downloadPath);
-            let b2 = fs.readFileSync(sourcePath);
-
-            expect(b1.toString() === b2.toString()).to.equals(true);
-        });
         it('Should retrieve an attachment buffered', async() => {
 
             let l = new lazyboyjs.LazyBoyAsync().Databases(dbName);
