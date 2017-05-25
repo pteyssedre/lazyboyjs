@@ -5,7 +5,7 @@
   "main": "dist/src/lazyboyjs.js",
   "typings": "dist/src/lazyboyjs",
   "scripts": {
-    "test": "node_modules/.bin/istanbul cover _mocha ./dist/test --reporter ./test"
+    "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha ./dist/test --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
   "keywords": [
     "couchdb",
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "coveralls": "^2.13.1",
     "istanbul": "^0.4.5",
     "mocha": "^2.5.3",
     "typescript": "^2.3.2",
