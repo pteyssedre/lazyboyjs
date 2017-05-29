@@ -11,3 +11,5 @@ services:
   - couchdb
 script:
   - npm test
+notifications:
+    slack: teyssedre:FWPzqLce2Lt9AoHPiaMZsrhP

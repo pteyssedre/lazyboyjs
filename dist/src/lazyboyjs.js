@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 const Cradle = require("cradle");
 const LazyFormatLogger = require("lazy-format-logger");
 const fs = require("fs");
@@ -611,6 +612,7 @@ var lazyboyjs;
                             if (report.dropped.length + report.fail.length == Object.keys(this._dbs).length) {
                                 return callback(null, report);
                             }
+                            //throw error;
                         }
                         else {
                             Log.d("LazyBoy", "DropDatabases", "db.destroy");
